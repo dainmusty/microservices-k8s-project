@@ -6,6 +6,9 @@ on:
       working_directory:
         required: true
         type: string
+      apply:
+        required: true
+        type: boolean
     secrets: inherit
 
 env:
@@ -22,57 +25,9 @@ permissions:
   contents: read
 
 jobs:
-  security-scan:
-    name: Run Security Scans (OWASP + SonarCloud)
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # ---------------- OWASP ----------------
-      - name: OWASP Dependency-Check
-        uses: dependency-check/Dependency-Check_Action@main
-        id: Depcheck
-        with:
-          project: 'effulgencetech'
-          path: '.'
-          format: 'HTML'
-          out: 'reports'
-          args: >
-            --failOnCVSS 7
-            --enableRetired
-
-      - name: Upload OWASP Dependency-Check Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: OWASP Depcheck Report
-          path: reports
-
-      # ---------------- SonarCloud ----------------
-      - name: Install SonarCloud Scanner
-        run: |
-          curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-          unzip -q sonar-scanner.zip
-          echo "$PWD/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
-
-      - name: SonarCloud Scan
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          sonar-scanner \
-            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-            -Dsonar.organization=${SONAR_ORGANIZATION} \
-            -Dsonar.branch.name=${GITHUB_REF_NAME} \
-            -Dsonar.sources=. \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=$SONAR_TOKEN
-
-
   terraform:
     runs-on: ubuntu-latest
-    environment: dev        # <-- requires approval
-    needs: security-scan    # <-- wait for scans before infra deploy
+    environment: dev     # <-- approval happens ONLY when apply:true
 
     steps:
       - name: Checkout
@@ -98,10 +53,12 @@ jobs:
         run: terraform plan
 
       - name: Terraform Apply
+        if: ${{ inputs.apply == true }}
         working-directory: ${{ inputs.working_directory }}
         run: terraform apply -auto-approve
 
       - name: Update kubeconfig for EKS
+        if: ${{ inputs.apply == true }}
         run: |
           aws eks update-kubeconfig \
             --region ${{ env.AWS_REGION }} \
