@@ -1,0 +1,25 @@
+alertmanager:
+  alertmanagerSpec:
+    volumes:
+      - name: slack-webhook-secret
+        secret:
+          secretName: alertmanager-slack-webhook
+
+    volumeMounts:
+      - name: slack-webhook-secret
+        mountPath: /etc/alertmanager/secrets
+        readOnly: true
+
+  config:
+    global:
+      resolve_timeout: 5m
+
+    route:
+      receiver: slack-notifications
+
+    receivers:
+      - name: slack-notifications
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/slack_url
+            channel: "#alerts"
+            send_resolved: true

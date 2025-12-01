@@ -1,0 +1,198 @@
+# cloudformation template for nodegroup creation
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "EKS Managed Nodes (SSH access: false) [created by eksctl]"
+
+Parameters:
+  ClusterName:
+    Type: String
+    Description: EKS cluster name
+
+  NodeGroupName:
+    Type: String
+    Description: Name of the node group
+
+  InstanceType:
+    Type: String
+    Default: t2.medium
+    Description: EC2 instance type for nodes
+
+  AmiType:
+    Type: String
+    Description: Ami of the nodes
+
+  DesiredCapacity:
+    Type: Number
+    Default: 2
+    Description: Desired number of worker nodes
+
+  MinSize:
+    Type: Number
+    Default: 1
+    Description: Minimum number of worker nodes
+
+  MaxSize:
+    Type: Number
+    Default: 3
+    Description: Maximum number of worker nodes
+
+  VolumeSize:
+    Type: Number
+    Default: 80
+    Description: EBS volume size (GB)
+
+  VolumeIOPS:
+    Type: Number
+    Default: 3000
+    Description: EBS volume IOPS
+
+  VolumeThroughput:
+    Type: Number
+    Default: 125
+    Description: EBS volume throughput (MiB/s)
+
+Mappings:
+  ServicePrincipalPartitionMap:
+    aws:
+      EC2: ec2.amazonaws.com
+      EKS: eks.amazonaws.com
+      EKSFargatePods: eks-fargate-pods.amazonaws.com
+      IRA: rolesanywhere.amazonaws.com
+      SSM: ssm.amazonaws.com
+    aws-cn:
+      EC2: ec2.amazonaws.com.cn
+      EKS: eks.amazonaws.com
+      EKSFargatePods: eks-fargate-pods.amazonaws.com
+    aws-iso:
+      EC2: ec2.c2s.ic.gov
+      EKS: eks.amazonaws.com
+      EKSFargatePods: eks-fargate-pods.amazonaws.com
+    aws-iso-b:
+      EC2: ec2.sc2s.sgov.gov
+      EKS: eks.amazonaws.com
+      EKSFargatePods: eks-fargate-pods.amazonaws.com
+    aws-iso-e:
+      EC2: ec2.amazonaws.com
+      EKS: eks.amazonaws.com
+      EKSFargatePods: eks-fargate-pods.amazonaws.com
+    aws-iso-f:
+      EC2: ec2.amazonaws.com
+      EKS: eks.amazonaws.com
+      EKSFargatePods: eks-fargate-pods.amazonaws.com
+    aws-us-gov:
+      EC2: ec2.amazonaws.com
+      EKS: eks.amazonaws.com
+      EKSFargatePods: eks-fargate-pods.amazonaws.com
+      IRA: rolesanywhere.amazonaws.com
+      SSM: ssm.amazonaws.com
+Resources:
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              Iops: !Ref VolumeIOPS
+              Throughput: !Ref VolumeThroughput
+              VolumeSize: !Ref VolumeSize
+              VolumeType: gp3
+        MetadataOptions:
+          HttpPutResponseHopLimit: 2
+          HttpTokens: required
+        SecurityGroupIds:
+          - Fn::ImportValue: eks-cluster-stack::ClusterSecurityGroupId
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub "${ClusterName}-${NodeGroupName}-Node"
+              - Key: alpha.eksctl.io/nodegroup-name
+                Value: !Ref NodeGroupName
+              - Key: alpha.eksctl.io/nodegroup-type
+                Value: managed
+          - ResourceType: volume
+            Tags:
+              - Key: Name
+                Value: !Sub "${ClusterName}-${NodeGroupName}-Node"
+              - Key: alpha.eksctl.io/nodegroup-name
+                Value: !Ref NodeGroupName
+              - Key: alpha.eksctl.io/nodegroup-type
+                Value: managed
+          - ResourceType: network-interface
+            Tags:
+              - Key: Name
+                Value: !Sub "${ClusterName}-${NodeGroupName}-Node"
+              - Key: alpha.eksctl.io/nodegroup-name
+                Value: !Ref NodeGroupName
+              - Key: alpha.eksctl.io/nodegroup-type
+                Value: managed
+      LaunchTemplateName:
+        Fn::Sub: "${AWS::StackName}"
+
+  ManagedNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      AmiType: !Ref AmiType
+      ClusterName: !Ref ClusterName
+      InstanceTypes:
+        - !Ref InstanceType
+      Labels:
+        alpha.eksctl.io/cluster-name: !Ref ClusterName
+        alpha.eksctl.io/nodegroup-name: !Ref NodeGroupName
+      LaunchTemplate:
+        Id:
+          Ref: LaunchTemplate
+      NodeRole:
+        Fn::GetAtt:
+          - NodeInstanceRole
+          - Arn
+      NodegroupName: !Ref NodeGroupName
+      ScalingConfig:
+        DesiredSize: !Ref DesiredCapacity
+        MaxSize: !Ref MaxSize
+        MinSize: !Ref MinSize
+
+      Subnets:
+        Fn::Split:
+          - ","
+          - Fn::Join:
+            - ","
+            - - Fn::ImportValue: eks-cluster-stack::SubnetsPublic
+              - Fn::ImportValue: eks-cluster-stack::SubnetsPrivate
+
+        
+      Tags:
+        alpha.eksctl.io/nodegroup-name: et-nodegroup
+        alpha.eksctl.io/nodegroup-type: managed
+  NodeInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - Fn::FindInMap:
+                    - ServicePrincipalPartitionMap
+                    - Ref: AWS::Partition
+                    - EC2
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/AmazonEKS_CNI_Policy
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/AmazonEKSLoadBalancingPolicy
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/ElasticLoadBalancingFullAccess
+        
+      Path: /
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/NodeInstanceRole"
+ 
+
+# "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"

@@ -1,0 +1,14 @@
+# k8s/shared/namespace.yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fonapp
+  labels:
+    name: fonapp
+    app: fonapp
+    environment: dev
+    owner: dev-team
+    tier: frontend
+    version: v1.0.0
+    argocd.argoproj.io/managed-by: argocd  # Helps ArgoCD track and manage this namespace

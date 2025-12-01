@@ -1,0 +1,48 @@
+prometheus:
+  prometheusSpec:
+    additionalPrometheusRules:
+      - name: custom-node-alerts
+        groups:
+          - name: node.rules
+            rules:
+              - alert: HighCPUUsage
+                expr: >
+                  100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle",job="node-exporter"}[5m])) * 100) > 80
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: High CPU usage on {{ $labels.instance }}
+                  description: CPU usage has been above 80% for more than 2 minutes.
+
+              - alert: HighMemoryUsage
+                expr: >
+                  (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 80
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: High memory usage on {{ $labels.instance }}
+                  description: Memory usage has exceeded 80% for more than 2 minutes.
+
+              - alert: NodeDown
+                expr: up{job="node-exporter"} == 0
+                for: 1m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: Node {{ $labels.instance }} is down
+                  description: Prometheus target {{ $labels.instance }} is unreachable (up == 0)
+
+      - name: test-alert
+        groups:
+          - name: test.rules
+            rules:
+              - alert: TestAlert
+                expr: vector(1)
+                for: 1m
+                labels:
+                  severity: info
+                annotations:
+                  summary: This is a test alert
+                  description: Firing to test Alertmanager and Slack integration

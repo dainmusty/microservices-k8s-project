@@ -1,0 +1,58 @@
+# name: Bootstrap ArgoCD
+
+# on:
+#   workflow_dispatch:
+#   push:
+#     paths:
+#       - "k8s/bootstrap/**"
+
+# jobs:
+#   bootstrap:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Install kubectl
+#         uses: azure/setup-kubectl@v4
+
+#       - name: Configure AWS Auth
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.ROLE_NAME }}
+#           role-session-name: GitHubActions-Terraform-Plan-${{ github.run_id }}
+#           aws-region: ${{ env.AWS_REGION }}
+
+#       - name: Update kubeconfig
+#         run: aws eks update-kubeconfig --name prod-eks --region ${{ env.AWS_REGION }}
+
+#       - name: Apply ArgoCD Root App
+#         run: kubectl apply -f k8s/bootstrap/
+
+#       - name: Force ArgoCD Sync
+#         run: kubectl -n argocd patch app root-app -p '{"spec": {"syncPolicy": {"automated": {}}}}' --type=merge
+ 
+# # #
+# #     deploy-k8s:
+# #         name: ArgoCD Sync
+# #     runs-on: ubuntu-latest
+# #     needs: terraform
+
+# #     steps:
+# #       - uses: actions/checkout@v4
+
+# #       - name: Set up Git user
+# #         run: |
+# #           git config user.name github-actions[bot]
+# #           git config user.email github-actions[bot]@users.noreply.github.com
+
+# #       - name: Pull latest before pushing
+# #         run: |
+# #           git pull --rebase origin main
+
+# #       - name: Push changes
+# #         env:
+# #           GH_PAT: ${{ secrets.GH_PAT }}
+# #         run: |
+# #           git remote set-url origin https://x-access-token:${GH_PAT}@github.com/dainmusty/gnpc-terraform-infra-k8s-web-app.git
+# #           git push origin main
