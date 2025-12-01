@@ -27,7 +27,7 @@ permissions:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    environment: dev     # <-- approval happens ONLY when apply:true
+    environment: dev     # approval happens ONLY when apply:true
 
     steps:
       - name: Checkout
