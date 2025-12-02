@@ -9,7 +9,7 @@ on:
       apply:
         required: true
         type: boolean
-    secrets: inherit
+    
 
 env:
   AWS_REGION: us-east-1
