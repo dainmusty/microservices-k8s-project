@@ -18,9 +18,12 @@ permissions:
   contents: read
 
 jobs:
-
+  
   # 🔹 Runs on PR → only terraform plan (no apply)
   plan:
+    permissions:
+      id-token: write
+      contents: read
     if: github.event_name == 'pull_request'
     uses: ./.github/workflows/terraform.yml
     with:
@@ -30,6 +33,9 @@ jobs:
 
   # 🔹 Runs on push to main → apply infra changes
   apply:
+    permissions:
+      id-token: write
+      contents: read
     if: github.event_name == 'push'
     uses: ./.github/workflows/terraform.yml
     with:
