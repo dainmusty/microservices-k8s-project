@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Musty's Phone Store</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <header>
+    <h1>Welcome to Musty's Phone Store</h1>
+    <div class="cart">
+      <i class="fas fa-shopping-cart"></i> Cart (0)
+    </div>
+  </header>
+
+  <main>
+    <div class="product">
+      <h2>iPhone 14</h2>
+      <p>$799</p>
+      <button>Buy Now</button>
+    </div>
+
+    <div class="product">
+      <h2>Samsung Galaxy S23</h2>
+      <p>$749</p>
+      <button>Buy Now</button>
+    </div>
+  </main>
+
+  <script>
+    let cartCount = 0;
+
+    const cartDisplay = document.querySelector('.cart');
+    const buyButtons = document.querySelectorAll('button');
+
+    buyButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        cartCount++;
+        cartDisplay.innerHTML = `<i class="fas fa-shopping-cart"></i> Cart (${cartCount})`;
+      });
+    });
+  </script>
+</body>
+</html>

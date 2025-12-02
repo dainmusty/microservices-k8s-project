@@ -1,0 +1,25 @@
+# k8s/bootstrap/apps/apps-dev.yaml
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apps-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/dainmusty/gnpc-terraform-infra-k8s-web-app
+    targetRevision: main
+    path: k8s/apps/dev
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: fonapp
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+  # Optional ordering (ensure shared resources come first)
+  dependsOn:
+    - shared-app
