@@ -25,7 +25,7 @@ env:
   SONAR_ORGANIZATION: effulgencetech
   TF_VERSION: "1.6.6"
   AWS_ACCOUNT_ID: 651706774390
-  ROLE_NAME: microservices-k8s-project-dev-tf-role
+  ROLE_NAME: microservices-project-dev-tf-role 
   working_directory: terraform/root-modules/env/dev
 
 permissions:
