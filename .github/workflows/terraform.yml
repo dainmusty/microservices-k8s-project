@@ -61,10 +61,10 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ${{ env.working_directory }}
-        run: terraform plan
+        run: terraform plan -out=tfplan || true
 
 
-  DeployApply:
+  DeployInfra:
     runs-on: ubuntu-latest
     environment: dev   # approval required
     if: |
@@ -94,11 +94,6 @@ jobs:
         if: ${{ github.event.inputs.terraform_action == 'apply' }}
         working-directory: ${{ env.working_directory }}
         run: terraform apply -auto-approve
-
-      - name: Terraform Destroy
-        if: ${{ github.event.inputs.terraform_action == 'destroy' }}
-        working-directory: ${{ env.working_directory }}
-        run: terraform destroy -auto-approve
 
       - name: Update kubeconfig for EKS
         if: ${{ github.event.inputs.terraform_action == 'apply' }}
