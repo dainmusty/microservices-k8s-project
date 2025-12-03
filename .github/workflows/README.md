@@ -26,6 +26,18 @@ k8s/
       web/
       payment/
 
+OPTIONAL NEXT IMPROVEMENTS bootstrap argocd
+
+We can add:
+
+🔹 Automatic cluster drift detection
+
+ArgoCD CLI + notification when apps are OutOfSync
+
+🔹 Slack / MS Teams notification on rollout
+🔹 Auto-create ArgoCD Projects per environment
+🔹 Add SOPS / Sealed Secrets auto-sync
+
 
 FINAL BEST PRACTICE WORKFLOW MODEL
 
