@@ -1,0 +1,26 @@
+name: Web App CI
+
+on:
+  push:
+    paths:
+      - "k8s/apps/web-app/**"
+
+jobs:
+  build-and-push:
+    uses: ./.github/workflows/docker-build.yml
+    with:
+      aws_region: us-east-1
+      aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+      aws_role_name: microservices-project-dev-tf-role
+      ecr_repo: web-app
+      image_name: web-app
+
+  update-manifest:
+    needs: build-and-push
+    uses: ./.github/workflows/update-manifest.yml
+    with:
+      app_path: "k8s/apps/web-app"
+      manifest_file: "web-deployment.yml"
+      container_name: "nanajanashia/k8s-demo-app"
+      new_tag: ${{ github.sha }}
+      commit_message: "Updated web app image tag"

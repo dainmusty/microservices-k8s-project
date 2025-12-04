@@ -1,0 +1,66 @@
+name: Reusable Docker Build & Push
+
+on:
+  workflow_call:
+    inputs:
+      aws_region:
+        required: true
+        type: string
+      aws_account_id:
+        required: true
+        type: string
+      aws_role_name:
+        required: true
+        type: string
+      ecr_repo:
+        required: true
+        type: string
+      image_name:
+        required: false
+        default: app
+        type: string
+
+    secrets:
+      aws_oidc_role:
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ inputs.aws_region }}
+      AWS_ACCOUNT_ID: ${{ inputs.aws_account_id }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build container
+        run: |
+          docker build -t ${{ inputs.image_name }}:${{ github.sha }} .
+
+      - name: Security scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ inputs.image_name }}:${{ github.sha }}
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ inputs.aws_account_id }}:role/${{ inputs.aws_role_name }}
+          aws-region: ${{ inputs.aws_region }}
+          role-session-name: github-ecr-session
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region ${{ inputs.aws_region }} \
+            | docker login --username AWS --password-stdin \
+              ${{ inputs.aws_account_id }}.dkr.ecr.${{ inputs.aws_region }}.amazonaws.com
+
+      - name: Set target registry
+        run: echo "TARGET=${{ inputs.aws_account_id }}.dkr.ecr.${{ inputs.aws_region }}.amazonaws.com/${{ inputs.ecr_repo }}" >> $GITHUB_ENV
+
+      - name: Tag and Push to ECR
+        run: |
+          docker tag ${{ inputs.image_name }}:${{ github.sha }} $TARGET:${{ github.sha }}
+          docker push $TARGET:${{ github.sha }}
