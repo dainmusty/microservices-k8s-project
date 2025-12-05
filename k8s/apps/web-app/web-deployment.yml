@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: web-app
-          image: nanajanashia/k8s-demo-app:v1.0
+          image: nginx:trixie-perl
           ports:
             - containerPort: 3000
           env:

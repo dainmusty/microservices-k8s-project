@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: mongo
-        image: mongo:5.0
+        image: mongo:8.0.16-nanoserver-ltsc2022
         ports:
         - containerPort: 27017
         env:

@@ -21,6 +21,6 @@ spec:
     spec:
       containers:
         - name: token
-          image: dainmusty/fonapp:latest
+          image: nginx:trixie-perl
           ports:
             - containerPort: 80

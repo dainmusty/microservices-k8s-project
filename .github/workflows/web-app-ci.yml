@@ -5,6 +5,18 @@ on:
     paths:
       - "k8s/apps/web-app/**"
 
+
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy the new image to the cluster?"
+        required: true
+        default: "false"    # If later token-app does require auto deploy,you just flip: default to "true"
+        type: choice
+        options:
+          - "true"
+          - "false"    
+
 jobs:
   build-and-push:
     uses: ./.github/workflows/docker-build.yml
@@ -17,6 +29,7 @@ jobs:
 
   update-manifest:
     needs: build-and-push
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true'
     uses: ./.github/workflows/update-manifest.yml
     with:
       app_path: "k8s/apps/web-app"
