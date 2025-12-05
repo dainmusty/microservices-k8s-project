@@ -609,3 +609,70 @@ Argo will:
 ✔ You copy Argo admin password
 ✔ Login to ArgoCD UI
 ✔ See all apps synced
+
+
+Meaning of @main
+
+In GitHub Actions, when you call a reusable workflow:
+
+uses: org/repo/.github/workflows/docker-reusable.yml@main
+
+
+👉 @main tells GitHub which version (branch, tag, or commit) of that workflow file to use.
+
+It works exactly like this:
+
+@main → use the file from the main branch
+
+@v1 → use a release tag
+
+@a1b2c3d → use a specific commit SHA
+
+So GitHub downloads the workflow file from that branch/tag and executes it.
+
+🔍 Why do we normally use @main?
+
+Because your reusable workflow sits in the repo’s default branch (usually main).
+
+Any time you update that reusable file on main, callers automatically get the latest version — unless they hard-pin versions (which is safer for production).
+
+🔁 What are safer alternatives?
+
+For stability (especially production CI/CD), it’s better to reference:
+
+✔ A git tag
+✔ Or a specific commit SHA
+
+Example using tag:
+
+uses: org/repo/.github/workflows/docker-reusable.yml@v1.0.0
+
+
+This ensures:
+
+pipelines don’t break unexpectedly
+
+upgrades happen intentionally, via version bump
+
+🔹 Summary
+Syntax	Meaning
+@main	Pull reusable workflow file from the main branch
+@v1	Pull from a tagged version
+@commitSHA	Locked to one version
+
+So @main is simply the version pointer of the reusable workflow you’re importing.
+
+
+Code + Dockerfile → Build → Image → Deploy
+
+auto-merge PR on approval
+✨ ChatOps approval with Slack
+✨ support Helm values.yaml update
+✨ multi-service update per PR
+
+If you want next:
+
+🔥 automatic PR reviewers
+🔥 link PR to Jira
+🔥 auto-close PR if deployment fails
+🔥 ability to batch multiple image updates into PR

@@ -12,7 +12,7 @@ env:
   AWS_ACCOUNT_ID: 651706774390
   ROLE_NAME: microservices-project-dev-tf-role
   BOOTSTRAP_DIR: k8s/bootstrap
-  BOOTSTRAP_FILE_NAME: bootstrap-argo-app.yaml
+  BOOTSTRAP_FILE_NAME: bootstrap-argo-app.yml
 
 permissions:
   id-token: write
