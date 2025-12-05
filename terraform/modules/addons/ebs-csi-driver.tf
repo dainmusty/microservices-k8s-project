@@ -1,4 +1,4 @@
-resource "kubernetes_service_account" "ebs_csi_controller" {
+resource "kubernetes_service_account_v1" "ebs_csi_controller" {
   metadata {
     name      = "ebs-csi-controller-sa"
     namespace = "kube-system"
@@ -29,5 +29,5 @@ resource "helm_release" "ebs_csi_driver" {
       }
     })
   ]
-  depends_on = [kubernetes_service_account.ebs_csi_controller]
+  depends_on = [kubernetes_service_account_v1.ebs_csi_controller]
 }
