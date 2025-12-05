@@ -25,7 +25,7 @@ locals {
   grafana_secret = jsondecode(data.aws_secretsmanager_secret_version.grafana_admin.secret_string)
 }
 
-resource "kubernetes_secret" "grafana_admin" {
+resource "kubernetes_secret_v1" "grafana_admin" {
   metadata {
     name      = "grafana-admin"
     namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
