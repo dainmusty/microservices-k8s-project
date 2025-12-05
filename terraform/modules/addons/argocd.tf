@@ -6,7 +6,7 @@ resource "kubernetes_namespace_v1" "argocd" {
 }
 
 # 2. Create IRSA-enabled Service Account
-resource "kubernetes_service_account" "argocd_sa" {
+resource "kubernetes_service_account_v1" "argocd_sa" {
   metadata {
     name      = "argocd-server"
     namespace = kubernetes_namespace_v1.argocd.metadata[0].name
@@ -35,6 +35,6 @@ resource "helm_release" "argocd" {
 
   set {
     name  = "server.serviceAccount.name"
-    value = kubernetes_service_account.argocd_sa.metadata[0].name
+    value = kubernetes_service_account_v1.argocd_sa.metadata[0].name
   }
 }
