@@ -37,8 +37,11 @@ permissions:
 jobs:
 
   PlanInfra:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' || 
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'plan')
+
 
     steps:
       - name: Checkout
