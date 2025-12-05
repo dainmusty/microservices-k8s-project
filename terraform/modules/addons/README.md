@@ -112,3 +112,4 @@ EBS CSI Driver	Cluster connection validated, namespace checks passed
 Secrets Handling	Migrated to Terraform-managed secure secrets from AWS SM
 Terraform Structure	Modularized alert rules and Helm values for production readiness
 
+gfnpasswd$1234grafana-user-passwd
