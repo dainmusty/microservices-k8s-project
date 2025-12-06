@@ -39,9 +39,9 @@ jobs:
   PlanInfra:
     runs-on: ubuntu-latest
     if: |
-      github.event_name == 'pull_request' || 
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'plan')
+      github.event_name == 'pull_request'
 
+      
 
     steps:
       - name: Checkout
@@ -77,14 +77,11 @@ jobs:
   DeployInfra:
     runs-on: ubuntu-latest
     environment: dev  # approval required by high authority
-    needs: [PlanInfra]  # ensures ordering when PR -> merge happens
     if: |
-      github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.terraform_action == 'apply' &&
-      needs.PlanInfra.result == 'success'
+     (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply') ||
+     (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
-
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -115,8 +112,7 @@ jobs:
       # APPLY LOGIC
       - name: Terraform Apply
         if: |
-          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
+          github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply' && github.ref == 'refs/heads/main'
         working-directory: ${{ env.working_directory }}
         run: |
           if [ -f "tfplan" ]; then
