@@ -1,12 +1,12 @@
 # Create Kubernetes Service Account for Grafana
-resource "kubernetes_namespace" "monitoring" {
+resource "kubernetes_namespace_v1" "monitoring" {
   metadata {
     name = "monitoring"
   }
 }
 
 # Create Kubernetes Service Account for Grafana
-resource "kubernetes_service_account" "grafana" {
+resource "kubernetes_service_account_v1" "grafana" {
   metadata {
     name      = "grafana"
     namespace = "monitoring"
@@ -25,10 +25,10 @@ locals {
   grafana_secret = jsondecode(data.aws_secretsmanager_secret_version.grafana_admin.secret_string)
 }
 
-resource "kubernetes_secret" "grafana_admin" {
+resource "kubernetes_secret_v1" "grafana_admin" {
   metadata {
     name      = "grafana-admin"
-    namespace = kubernetes_namespace.monitoring.metadata[0].name
+    namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
   }
 
   data = {
@@ -53,7 +53,7 @@ resource "helm_release" "kube_prometheus_stack" {
   values = [
   templatefile("${path.module}/values/grafana.yaml", {
     region              = var.region
-    grafana_admin_secret = kubernetes_secret.grafana_admin.metadata[0].name
+    grafana_admin_secret = kubernetes_secret_v1.grafana_admin.metadata[0].name
   }),
   file("${path.module}/values/alertmanager.yaml"),
   file("${path.module}/values/prometheus_rules.yaml")
@@ -61,9 +61,9 @@ resource "helm_release" "kube_prometheus_stack" {
   ]
 
   depends_on = [
-    kubernetes_service_account.grafana,
-    kubernetes_secret.grafana_admin,
-    kubernetes_secret.alertmanager_slack_webhook
+    kubernetes_service_account_v1.grafana,
+    kubernetes_secret_v1.grafana_admin,
+    kubernetes_secret_v1.alertmanager_slack_webhook
   ]
 }
 
@@ -71,10 +71,10 @@ data "aws_secretsmanager_secret_version" "slack_webhook" {
   secret_id = var.slack_webhook_secret_name
 }
 
-resource "kubernetes_secret" "alertmanager_slack_webhook" {
+resource "kubernetes_secret_v1" "alertmanager_slack_webhook" {
   metadata {
     name      = "alertmanager-slack-webhook"
-    namespace = kubernetes_namespace.monitoring.metadata[0].name
+    namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
   }
 
   data = {

@@ -25,7 +25,7 @@ env:
   SONAR_ORGANIZATION: effulgencetech
   TF_VERSION: "1.6.6"
   AWS_ACCOUNT_ID: 651706774390
-  ROLE_NAME: microservices-project-dev-tf-role 
+  ROLE_NAME: microservices-project-dev-tf-role
   working_directory: terraform/root-modules/env/dev
 
 permissions:
@@ -37,8 +37,11 @@ permissions:
 jobs:
 
   PlanInfra:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' || 
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'plan')
+
 
     steps:
       - name: Checkout
@@ -61,12 +64,20 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ${{ env.working_directory }}
-        run: terraform plan -out=tfplan || true
+        run: terraform plan -out=tfplan
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-output
+          path: ${{ env.working_directory }}/tfplan
+
 
 
   DeployInfra:
     runs-on: ubuntu-latest
-    environment: dev   # approval required by high authority
+    environment: dev  # approval required by high authority
+    needs: [PlanInfra]  # ensures ordering when PR -> merge happens
     if: |
       (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
       (github.event_name == 'workflow_dispatch')
@@ -90,13 +101,39 @@ jobs:
         working-directory: ${{ env.working_directory }}
         run: terraform init -upgrade
 
+      - name: Download tfplan artifact (if exists)
+        uses: actions/download-artifact@v4
+        with:
+          name: plan-output
+          path: ${{ env.working_directory }}
+        continue-on-error: true
+
+
+      # APPLY LOGIC
       - name: Terraform Apply
-        if: ${{ github.event.inputs.terraform_action == 'apply' }}
+        if: |
+          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
         working-directory: ${{ env.working_directory }}
-        run: terraform apply -auto-approve
+        run: |
+          if [ -f "tfplan" ]; then
+            terraform apply -auto-approve tfplan
+          else
+            terraform apply -auto-approve
+          fi
+
+
+      # DESTROY LOGIC
+      - name: Terraform Destroy
+        if: github.event.inputs.terraform_action == 'destroy'
+        working-directory: ${{ env.working_directory }}
+        run: terraform destroy -auto-approve
+
 
       - name: Update kubeconfig for EKS
-        if: ${{ github.event.inputs.terraform_action == 'apply' }}
+        if: |
+          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
         run: |
           aws eks update-kubeconfig \
             --region ${{ env.AWS_REGION }} \
