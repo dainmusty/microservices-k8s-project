@@ -12,6 +12,7 @@ resource "aws_s3_bucket_versioning" "versioning_log_bucket" {
   bucket = aws_s3_bucket.log_bucket.id
   versioning_configuration {
     status = var.log_bucket_versioning_status
+     mfa_delete = "Disabled"
   }
 }
 
@@ -29,6 +30,7 @@ resource "aws_s3_bucket_versioning" "versioning_operations_bucket" {
   bucket = aws_s3_bucket.operations_bucket.id
   versioning_configuration {
     status = var.operations_bucket_versioning_status
+     mfa_delete = "Disabled"
   }
 }
 
@@ -54,6 +56,7 @@ resource "aws_s3_bucket_versioning" "versioning_replication_bucket" {
   bucket = aws_s3_bucket.replication_bucket.id
   versioning_configuration {
     status = var.replication_bucket_versioning_status
+      mfa_delete = "Disabled"
   }
 }
 
