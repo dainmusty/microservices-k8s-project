@@ -1,7 +1,7 @@
 # Creates the S3 Bucket for logging
 resource "aws_s3_bucket" "log_bucket" {
   bucket = var.log_bucket_name
-
+  force_destroy = true
   tags = {
     Name        = "${var.ResourcePrefix}-s3-log-bucket"
 
@@ -18,7 +18,7 @@ resource "aws_s3_bucket_versioning" "versioning_log_bucket" {
 # Create the Primary S3 Bucket
 resource "aws_s3_bucket" "operations_bucket" {
   bucket = var.operations_bucket_name
-
+  force_destroy = true
   tags = {
     Name        = "${var.ResourcePrefix}-s3-bucket"
 
@@ -44,7 +44,7 @@ resource "aws_s3_bucket_logging" "operations_bucket_logging" {
 # Creates Replication Destination Bucket
 resource "aws_s3_bucket" "replication_bucket" {
   bucket = var.replication_bucket_name
-
+  force_destroy = true
   tags = {
     Name        = "${var.ResourcePrefix}-s3-replication-destination"
   }
