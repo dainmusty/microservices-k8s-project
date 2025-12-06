@@ -16,7 +16,7 @@ on:
         options:
           - "plan"
           - "apply"
-          - "destroy"
+          
 
 env:
   AWS_REGION: us-east-1
@@ -79,8 +79,11 @@ jobs:
     environment: dev  # approval required by high authority
     needs: [PlanInfra]  # ensures ordering when PR -> merge happens
     if: |
-      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-      (github.event_name == 'workflow_dispatch')
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.terraform_action == 'apply' &&
+      needs.PlanInfra.result == 'success'
+
+
 
     steps:
       - name: Checkout repository
@@ -122,14 +125,7 @@ jobs:
             terraform apply -auto-approve
           fi
 
-
-      # DESTROY LOGIC
-      - name: Terraform Destroy
-        if: github.event.inputs.terraform_action == 'destroy'
-        working-directory: ${{ env.working_directory }}
-        run: terraform destroy -auto-approve
-
-
+   
       - name: Update kubeconfig for EKS
         if: |
           (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
