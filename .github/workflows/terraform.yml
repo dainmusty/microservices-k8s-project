@@ -1,28 +1,21 @@
 name: Deploy Infrastructure
 
 on:
-  push:
-    branches:
-      - main
-      - 'feature/**'
   pull_request:
     branches: [main]
+
   workflow_dispatch:
     inputs:
       terraform_action:
-        description: "Select the Terraform action to perform"
+        description: "Choose apply after approval"
         required: true
         type: choice
         options:
-          - "plan"
-          - "apply"
-          
+          - apply
 
 env:
   AWS_REGION: us-east-1
   CLUSTER_NAME: dev_eks_cluster
-  SONAR_PROJECT_KEY: dainmusty_microservices-k8s-project
-  SONAR_ORGANIZATION: effulgencetech
   TF_VERSION: "1.9.7"
   AWS_ACCOUNT_ID: 651706774390
   ROLE_NAME: microservices-project-dev-tf-role
@@ -32,16 +25,12 @@ permissions:
   id-token: write
   contents: read
   pull-requests: write
-  packages: write
 
 jobs:
 
   PlanInfra:
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'pull_request'
-
-      
+    if: github.event_name == 'pull_request'
 
     steps:
       - name: Checkout
@@ -66,23 +55,22 @@ jobs:
         working-directory: ${{ env.working_directory }}
         run: terraform plan -out=tfplan
 
-      - name: Upload Plan Artifact
+      - name: Upload plan artifact
         uses: actions/upload-artifact@v4
         with:
-          name: plan-output
+          name: infra-plan
           path: ${{ env.working_directory }}/tfplan
 
 
 
   DeployInfra:
     runs-on: ubuntu-latest
-    environment: dev  # approval required by high authority
-    if: |
-     github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply'
+    needs: PlanInfra
+    environment: dev   # requires approval
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply'
 
-    
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
@@ -91,7 +79,7 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.ROLE_NAME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
@@ -100,31 +88,23 @@ jobs:
         working-directory: ${{ env.working_directory }}
         run: terraform init -upgrade
 
-      - name: Download tfplan artifact (if exists)
+      - name: Download plan
         uses: actions/download-artifact@v4
         with:
-          name: plan-output
+          name: infra-plan
           path: ${{ env.working_directory }}
-        continue-on-error: true
 
-
-      # APPLY LOGIC
       - name: Terraform Apply
-        if: |
-          github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply' && github.ref == 'refs/heads/main'
         working-directory: ${{ env.working_directory }}
         run: |
-          if [ -f "tfplan" ]; then
+          if [ -f "./tfplan" ]; then
             terraform apply -auto-approve tfplan
           else
             terraform apply -auto-approve
           fi
 
-   
-      - name: Update kubeconfig for EKS
-        if: |
-          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
+      - name: Update kubeconfig
+        working-directory: ${{ env.working_directory }}
         run: |
           aws eks update-kubeconfig \
             --region ${{ env.AWS_REGION }} \
