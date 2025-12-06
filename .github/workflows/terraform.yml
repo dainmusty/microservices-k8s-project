@@ -79,8 +79,10 @@ jobs:
     environment: dev  # approval required by high authority
     needs: [PlanInfra]  # ensures ordering when PR -> merge happens
     if: |
-      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-      (github.event_name == 'workflow_dispatch')
+        github.event_name == 'workflow_dispatch' &&
+        github.event.inputs.terraform_action == 'apply' &&
+        needs.PlanInfra.result == 'success'
+
 
     steps:
       - name: Checkout repository
