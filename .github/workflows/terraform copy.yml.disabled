@@ -1,21 +1,9 @@
-name: Deploy Infrastructure
-
+name: "Deploy Infrastructure"
 on:
   push:
     branches:
       - main
-      - 'feature/**'
   pull_request:
-    branches: [main]
-  workflow_dispatch:
-    inputs:
-      terraform_action:
-        description: "Select the Terraform action to perform"
-        required: true
-        type: choice
-        options:
-          - "plan"
-          - "apply"
           
 
 env:
