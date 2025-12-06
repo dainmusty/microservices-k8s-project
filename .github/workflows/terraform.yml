@@ -78,8 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev  # approval required by high authority
     if: |
-     (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply') ||
-     (github.event_name == 'push' && github.ref == 'refs/heads/main')
+     github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply'
 
     
     steps:
