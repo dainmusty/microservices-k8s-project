@@ -18,7 +18,7 @@ resource "kubernetes_service_account_v1" "argocd_sa" {
   depends_on = [kubernetes_namespace_v1.argocd]
 }
 
-# 3. Install ArgoCD via Helm with Ingress enabled (HTTP only)
+# 3. Install ArgoCD via Helm with Ingress enabled (HTTP only) for now
 resource "helm_release" "argocd" {
   name             = "argocd"
   repository       = "https://argoproj.github.io/argo-helm"
