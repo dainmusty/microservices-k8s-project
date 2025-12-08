@@ -1,19 +1,10 @@
 name: "Deploy Infrastructure"
-
 on:
   push:
     branches:
       - main
   pull_request:
-  workflow_dispatch:
-    inputs:
-      terraform_action:
-        description: "Select action"
-        required: true
-        type: choice
-        options:
-          - "plan"
-          - "apply"
+          
 
 env:
   AWS_REGION: us-east-1
@@ -30,28 +21,34 @@ permissions:
   packages: write
 
 jobs:
-
-  PlanInfra:
+  PlanAndDeployInfra:
     runs-on: ubuntu-latest
+    environment: dev
     defaults:
-      run:
-        working-directory: ${{ env.tf_actions_working_dir }}
-    if: |
-      github.event_name == 'pull_request' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'plan')
+     run:
+      shell: bash
+      working-directory: ${{ env.tf_actions_working_dir }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Git checkout
+        uses: actions/checkout@v3
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Configure AWS credentials from AWS account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHub-OIDC-TERRAFORM
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.ROLE_NAME }}
-          aws-region: ${{ env.AWS_REGION }}
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
 
       - name: Terraform Init
         id: init
@@ -63,36 +60,39 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color -input=false -out=tfplan
+        run: terraform plan -no-color -input=false
         continue-on-error: true
 
-      - name: Upload plan file
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan-output
-          path: ${{ env.tf_actions_working_dir }}/tfplan
-
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
         env:
           PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const output = `
-            #### Terraform Init: \`${{ steps.init.outcome }}\`
-            #### Terraform Validate: \`${{ steps.validate.outcome }}\`
-            #### Terraform Plan Result: \`${{ steps.plan.outcome }}\`
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+
+            </details>
+
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
 
             <details><summary>Show Plan</summary>
 
-            \`\`\`
+            \`\`\`\n
             ${process.env.PLAN}
             \`\`\`
 
             </details>
 
-            *Triggered by @${{ github.actor }} under \`${{ github.workflow }}\`*`;
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -100,51 +100,20 @@ jobs:
               body: output
             })
 
-  DeployInfra:
-    runs-on: ubuntu-latest
-    needs: PlanInfra
-    environment: dev   # Manual approval required
-    if: |
-      github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply'
-      || (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
-    defaults:
-      run:
-        working-directory: ${{ env.tf_actions_working_dir }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.ROLE_NAME }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Terraform Init
-        run: terraform init -input=false
-
-      - name: Download tfplan artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan-output
-          path: ${{ env.tf_actions_working_dir }}
-        continue-on-error: true
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
 
       - name: Terraform Apply
-        run: |
-          if [ -f "tfplan" ]; then
-            terraform apply -auto-approve tfplan
-          else
-            terraform apply -auto-approve
-          fi
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -input=false
 
+       
       - name: Update kubeconfig for EKS
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           aws eks update-kubeconfig \
             --region ${{ env.AWS_REGION }} \
             --name ${{ env.CLUSTER_NAME }}
+
