@@ -31,10 +31,10 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Configure AWS credentials from AWS account
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.ROLE_NAME }}
           aws-region: ${{ env.AWS_REGION }}
