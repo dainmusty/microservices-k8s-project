@@ -204,7 +204,7 @@ resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
 
 # RBAC Instance Profile
 resource "aws_iam_instance_profile" "rbac_instance_profile" {
-  name = "GNPC-dev-rbac-instance-profile"
+  name = var.rbac_instance_profile_name
   role = aws_iam_role.admin_role.name
 }
 
@@ -469,12 +469,12 @@ resource "aws_iam_role_policy_attachment" "prometheus_policy_attachment" {
 
 # Instance profiles
 resource "aws_iam_instance_profile" "grafana_instance_profile" {
-  name = "GNPC-dev-grafana-instance-profile"
+  name = var.grafana_instance_profile_name
   role = aws_iam_role.grafana_role.name
 }
 
 resource "aws_iam_instance_profile" "prometheus_instance_profile" {
-  name = "GNPC-dev-prometheus-instance-profile"
+  name = var.prometheus_instance_profile_name
   role = aws_iam_role.prometheus_role.name
 }
 
