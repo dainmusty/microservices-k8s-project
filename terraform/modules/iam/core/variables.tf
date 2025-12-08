@@ -86,8 +86,19 @@ variable "eks_cluster_role_tags" {
   
 }
 
+variable "rbac_instance_profile_name" {
+  description = "Name of the RBAC Instance Profile"
+  type        = string
+}
 
+variable "prometheus_instance_profile_name" {
+  description = "Name of the Prometheus Instance Profile"
+  type        = string
+}
 
-
+variable "grafana_instance_profile_name" {
+  description = "Name of the Grafana Instance Profile"
+  type        = string
+}
 
 
