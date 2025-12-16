@@ -1,13 +1,18 @@
 grafana:
   serviceAccount:
     create: false
-    name: grafana
+    name: grafana     # Refers to the existing Service Account created via IRSA
 
   service:
-    type: LoadBalancer
+    type: ClusterIP
+
+  ingress:
+    enabled: false
 
   admin:
     existingSecret: ${grafana_admin_secret}
+    userKey: admin-user
+    passwordKey: admin-password
 
   persistence:
     enabled: true

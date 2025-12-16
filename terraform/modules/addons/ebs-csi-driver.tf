@@ -1,6 +1,6 @@
 resource "kubernetes_service_account_v1" "ebs_csi_controller" {
   metadata {
-    name      = "ebs-csi-controller-sa"
+    name      = "ebs-csi-controller-sa" # EBS CSI Driver expects this exact name  for the controller service account
     namespace = "kube-system"
     annotations = {
       "eks.amazonaws.com/role-arn" = var.ebs_csi_role_arn
@@ -24,7 +24,7 @@ resource "helm_release" "ebs_csi_driver" {
       controller = {
         serviceAccount = {
           create = false
-          name   = "ebs-csi-controller-sa"
+          name   = kubernetes_service_account_v1.ebs_csi_controller.metadata[0].name
         }
       }
     })

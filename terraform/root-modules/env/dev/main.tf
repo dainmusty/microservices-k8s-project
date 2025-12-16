@@ -1,5 +1,6 @@
 provider "aws" {
   region  = "us-east-1"
+   #profile = "default"
 
  }
 
@@ -29,28 +30,18 @@ module "iam_core" {
 
   # Instance Profile Names
   rbac_instance_profile_name        = "dev-rbac-instance-profile"
-  prometheus_instance_profile_name = "dev-prometheus-instance-profile"
-  grafana_instance_profile_name    = "dev-grafana-instance-profile"
-
+  
   
   # S3 Buckets Referenced
   log_bucket_arn        = module.s3.operations_bucket_arn
   operations_bucket_arn = module.s3.log_bucket_arn
   log_bucket_name       = module.s3.log_bucket_name
 
-  # EKS Cluster Role Tags
-  eks_cluster_role_tags = {
-    Environment = "Dev"
-    Project     = "Startup"
-  }
-
-  node_group_role_tags = {
-    Environment = "Dev"
-    Project     = "Startup"
+  
+   
   }
 
 
-}
 
 
 # IAM Module
@@ -58,11 +49,11 @@ module "iam_irsa" {
   source = "../../../modules/iam/irsa"
 
   # addons variables
-  oidc_provider_arn     = module.eks.oidc_provider_arn
   grafana_secret_name   = "grafana-user-passwd"
   cluster_auth = module.eks.cluster_certificate_authority_data
   cluster_name = module.eks.cluster_name
-  oidc_issuer = module.eks.oidc_provider_url
+  oidc_issuer = module.eks.oidc_issuer
+  oidc_provider_url = module.eks.oidc_provider_url
 
 }
 
@@ -137,13 +128,13 @@ module "bastion_sg" {
 }
 
 
-# Bastion SG
-module "private_sg" {
+# Private SG - Use this a private EKS SG 
+module "cluster_sg" {
   source          = "../../../modules/security/private-sg"
   vpc_id          = module.vpc.vpc_id
   env = "Dev"
 
-  private_ingress_rules = [
+  ingress_rules = [
     {
       description              = "Allow traffic from bastion"
       from_port                = 22
@@ -160,7 +151,7 @@ module "private_sg" {
     }
   ]
 
-  private_egress_rules = [
+  egress_rules = [
     {
       description = "Allow all egress"
       from_port   = 0
@@ -170,14 +161,67 @@ module "private_sg" {
     }
   ]
 
-  private_sg_tags = {
-    Name        = "private-sg"
+  cluster_sg_tags = {
+    Name        = "cluster-sg"
     Environment = "Dev"
   }
 
 }
 
 
+# Public SG - Use this a public EKS SG
+module "node_sg" {
+  source          = "../../../modules/security/public-sg"
+  vpc_id          = module.vpc.vpc_id
+  env = "Dev"
+
+  ingress_rules = [
+
+  # Node-to-node traffic
+  {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    self        = true
+    description = "Allow all node-to-node traffic"
+  },
+
+  # Kubelet API from control plane
+  {
+    from_port       = 10250
+    to_port         = 10250
+    protocol        = "tcp"
+    security_groups = [module.cluster_sg.cluster_sg_id]
+    description     = "Allow kubelet API from control plane"
+  },
+  {
+  description = "Allow control plane to reach nodes"
+  from_port   = 0
+  to_port     = 65535
+  protocol    = "tcp"
+  security_groups = [module.cluster_sg.cluster_sg_id]
+}
+
+]
+
+  # allow node -> anywhere egress
+  egress_rules = [
+  {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound traffic"
+  }
+]
+
+
+  node_sg_tags = {
+    Name        = "node-sg"
+    Environment = "Dev"
+  }
+
+}
 
 
 
@@ -218,8 +262,8 @@ module "ec2" {
   ]
 
   vpc_id                     = module.vpc.vpc_id
-  public_subnet_ids          = module.vpc.public_subnets
-  private_subnet_ids         = module.vpc.private_subnets
+  public_subnet_ids          = module.vpc.public_subnet_ids
+  private_subnet_ids         = module.vpc.private_subnet_ids
   public_sg_id               = module.bastion_sg.bastion_sg_id
   private_sg_id              = module.bastion_sg.bastion_sg_id
   volume_size                = 8
@@ -293,46 +337,33 @@ module "s3" {
 module "eks" {
   source                  = "../../../modules/eks"
 
-  # Required cluster variables
-  subnet_ids = module.vpc.private_subnets
-  vpc_id     = module.vpc.vpc_id 
-  private_sg_id = [module.private_sg.private_sg_id]
-  
-  # EKS Cluster variables
-  cluster_name                   = "effulgencetech-dev"
-  cluster_role = module.iam_core.eks_cluster_role_arn
-  cluster_endpoint_public_access = true
-  cluster_version                = "1.34"
-  eks_cluster_tags              = {
-    Environment = "Dev"
-    Project     = "Startup"
-  }
-  eks_cluster_policies = module.iam_core.eks_cluster_policy_attachments
-  
-  
-  # EKS Managed Node Groups variables
+  # cluster variables
+  cluster_name = "effulgencetech-dev"
+  cluster_version  = "1.34"
+  cluster_role = module.iam_core.cluster_role_arn
+  subnet_ids = module.vpc.private_subnet_ids
+  cluster_policy = [
+    module.iam_core.cluster_policies
+  ]
+
+  # node group variables
   node_group_role_arn = module.iam_core.node_group_role_arn
-  eks_node_policies     = module.iam_core.eks_node_policy_attachments
-  eks_node_groups_configuration = {
-    dev-wg = {
-      desired_size  = 1
-      max_size      = 2
-      min_size      = 1
-      instance_types = ["t3.medium"]
-      capacity_type  = "SPOT"   # This has to do with EC2 instance purchasing options, either ON_DEMAND or SPOT.
-      tags = {
-        Environment = "Dev"
-        Project     = "Startup"
-        Name        = "dev-wg"
-      }
+  eks_node_policies = module.iam_core.eks_node_policies
+  dev_ng = {
+   worker_nodes_config = {
+    instance_types = ["t3.medium"]
+    capacity_type  = "ON_DEMAND"
+
+    scaling_config = {
+      desired_size = 2
+      max_size     = 3
+      min_size     = 2
     }
   }
-
-  eks_managed_node_group_defaults = {
-    instance_types = ["t2.micro"]
-    ami_type       = "AL2023_x86_64_STANDARD"
-  }
 }
+
+}
+
 
 
 
@@ -396,7 +427,7 @@ module "addons" {
   cluster_version = module.eks.cluster_version
 
   # AlB Controller variables
-  alb_controller_role = module.iam_irsa.alb_controller_role
+  alb_controller_role_arn = module.iam_irsa.alb_controller_role_arn
 
   # ArgoCD variables
   argocd_role_arn   = module.iam_irsa.argocd_role_arn
@@ -405,6 +436,7 @@ module "addons" {
   # Grafana variables
   grafana_secret_name     = "grafana-user-passwd"
   grafana_irsa_arn = module.iam_irsa.grafana_irsa_arn
+  prometheus_stack_version = "56.7.0"
 
   # Slack Webhook for Alertmanager variable
   slack_webhook_secret_name = "slack-webhook-alertmanager"
@@ -439,6 +471,37 @@ module "app_ecr_repo" {
 
 
 
+module "aws_auth" {
+  source = "../../../modules/eks-auth-configmap"
+
+  cluster_name                = module.eks.cluster_name
+  enable_aws_auth_bootstrap   = true
+
+  bootstrap_role_arn = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"
+
+  cluster_details = {
+    endpoint                   = module.eks.cluster_endpoint
+    certificate_authority_data = module.eks.cluster_certificate_authority_data
+  }
+
+  map_roles = [
+    # REQUIRED: worker nodes
+    {
+      rolearn  = module.iam_core.node_group_role_arn
+      username = "system:node:{{EC2PrivateDNSName}}"
+      groups   = ["system:bootstrappers", "system:nodes"]
+    },
+
+    # REQUIRED: Terraform / CI access
+    {
+      rolearn  = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"
+      username = "terraform"
+      groups   = ["system:masters"]
+    },
+  ]
+
+  map_users = []
+}
 
 
 

@@ -1,6 +1,6 @@
-resource "aws_security_group" "cluster_sg" {
-  name        = "${var.env}-cluster-sg"
-  description = "Security group for ${var.env}-cluster"
+resource "aws_security_group" "node_sg" {
+  name        = "${var.env}-public-sg"
+  description = "Security group for ${var.env}-node"
   vpc_id      = var.vpc_id
 
   dynamic "ingress" {
@@ -34,8 +34,8 @@ resource "aws_security_group" "cluster_sg" {
   }
 
   tags = merge(
-    var.cluster_sg_tags,
-    { Name = "${var.env}-cluster-sg" }
+    var.node_sg_tags,
+    { Name = "${var.env}-node-sg" }
   )
 }
 

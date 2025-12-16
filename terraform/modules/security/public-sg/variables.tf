@@ -37,8 +37,8 @@ variable "egress_rules" {
   default = []
 }
 
-variable "cluster_sg_tags" {
-  description = "Additional tags for the cluster security group"
+variable "node_sg_tags" {
+  description = "Additional tags for the private security group"
   type        = map(string)
   default     = {}
   
