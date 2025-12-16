@@ -475,7 +475,7 @@ module "aws_auth" {
   source = "../../../modules/eks-auth-configmap"
 
   cluster_name                = module.eks.cluster_name
-  enable_aws_auth_bootstrap   = false
+  enable_aws_auth_bootstrap   = true
 
   bootstrap_role_arn = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role" # use data to hide account id later
 
