@@ -475,9 +475,9 @@ module "aws_auth" {
   source = "../../../modules/eks-auth-configmap"
 
   cluster_name                = module.eks.cluster_name
-  enable_aws_auth_bootstrap   = true
+  enable_aws_auth_bootstrap   = false
 
-  bootstrap_role_arn = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"
+  bootstrap_role_arn = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role" # use data to hide account id later
 
   cluster_details = {
     endpoint                   = module.eks.cluster_endpoint
@@ -494,7 +494,7 @@ module "aws_auth" {
 
     # REQUIRED: Terraform / CI access
     {
-      rolearn  = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"
+      rolearn  = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"  # use data to hide account id later
       username = "terraform"
       groups   = ["system:masters"]
     },
