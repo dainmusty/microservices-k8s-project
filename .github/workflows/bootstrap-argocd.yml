@@ -9,7 +9,7 @@ on:
 env:
   AWS_REGION: us-east-1
   CLUSTER_NAME: dev_eks_cluster
-  AWS_ACCOUNT_ID: 651706774390
+  AWS_ACCOUNT_ID:  ${{ secrets.AWS_ACCOUNT_ID }}
   ROLE_NAME: microservices-project-dev-tf-role
   BOOTSTRAP_DIR: k8s/bootstrap
   BOOTSTRAP_FILE_NAME: bootstrap-argo-app.yml

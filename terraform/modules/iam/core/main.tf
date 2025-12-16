@@ -467,79 +467,83 @@ resource "aws_iam_role_policy_attachment" "prometheus_policy_attachment" {
   policy_arn = aws_iam_policy.prometheus_policy.arn
 }
 
-# Instance profiles
-resource "aws_iam_instance_profile" "grafana_instance_profile" {
-  name = var.grafana_instance_profile_name
-  role = aws_iam_role.grafana_role.name
-}
+# # Instance profiles
+# resource "aws_iam_instance_profile" "grafana_instance_profile" {
+#   name = var.grafana_instance_profile_name
+#   role = aws_iam_role.grafana_role.name
+# }
 
-resource "aws_iam_instance_profile" "prometheus_instance_profile" {
-  name = var.prometheus_instance_profile_name
-  role = aws_iam_role.prometheus_role.name
-}
-
-
+# resource "aws_iam_instance_profile" "prometheus_instance_profile" {
+#   name = var.prometheus_instance_profile_name
+#   role = aws_iam_role.prometheus_role.name
+# }
 
 
-########################################
-# IAM Roles for EKS Cluster 
-########################################
-# EKS Cluster Role
-resource "aws_iam_role" "eks_cluster_role" {
-  name = "${var.env}-eks-cluster-role"
+
+
+############################################
+# IAM Roles for EKS Cluster and Node Groups
+############################################
+
+# EKS Cluster IAM Role
+resource "aws_iam_role" "cluster_role" {
+
+  name = "${var.env}-cluster-role"
+
 
 
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "eks.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
+
+    Version = "2012-10-17",
+
+    Statement = [{
+
+      Action = "sts:AssumeRole",
+
+      Effect = "Allow",
+
+      Principal = {
+
+        Service = "eks.amazonaws.com"
+
       }
-    ]
+
+    }]
+
   })
 
-  tags = var.eks_cluster_role_tags
-  permissions_boundary = aws_iam_policy.permission_boundary.arn
 }
 
 # Attach required policies to the EKS Cluster Role
 resource "aws_iam_role_policy_attachment" "eks_cluster_policies" {
   for_each = toset([
     "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+    #"arn:aws:iam::aws:policy/AmazonEKSVPCResourceController" you can add this if using VPC CNI custom networking
   ])
-  role       = aws_iam_role.eks_cluster_role.name
+  role       = aws_iam_role.cluster_role.name
   policy_arn = each.key
 }
-
-
-
 ########################################
-# IAM ROLES for EKS Managed Node Groups
+
+
 ########################################
 # EKS Node Group Role
 resource "aws_iam_role" "node_group_role" {
-  name = "${var.env}-nodegroup-role"
+  name = "${var.env}-node-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
       }
-    ]
+    }]
   })
-
-  tags = var.node_group_role_tags
-  permissions_boundary = aws_iam_policy.permission_boundary.arn
 }
+
+ 
 
 # Attach required policies to the Node Group Role
 resource "aws_iam_role_policy_attachment" "eks_node_policies" {
@@ -553,6 +557,9 @@ resource "aws_iam_role_policy_attachment" "eks_node_policies" {
   "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess"
   ])
 
-  role       = aws_iam_role.node_group_role.name
   policy_arn = each.value
+  role       = aws_iam_role.node_group_role.name
+
 }
+
+########################################

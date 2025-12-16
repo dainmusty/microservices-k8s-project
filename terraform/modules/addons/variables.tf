@@ -32,7 +32,7 @@ variable "region" {
 }
 
 # Alb Controller variables
-variable "alb_controller_role" {
+variable "alb_controller_role_arn" {
   description = "ARN of the ALB controller role"
   type        = string
 }
@@ -62,6 +62,12 @@ variable "grafana_irsa_arn" {
   type        = string
   
 }
+
+variable "prometheus_stack_version" {
+  description = "prometheus stack version"
+  type = string
+} 
+
 
 # Slack Webhook for Alertmanager variable
 variable "slack_webhook_secret_name" {

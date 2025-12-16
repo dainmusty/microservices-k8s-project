@@ -43,19 +43,20 @@ resource "kubernetes_secret_v1" "grafana_admin" {
 # Deploys the kube-prometheus-stack Helm chart for monitoring(Prometheus, Grafana, etc.)
 resource "helm_release" "kube_prometheus_stack" {
   name             = "kube-prometheus-stack"
-  namespace        = "monitoring"
-  create_namespace = true
+  namespace        = kubernetes_namespace_v1.monitoring.metadata[0].name
+  create_namespace = false
 
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
-  version    = "56.7.0"
+  version    = var.prometheus_stack_version
 
   values = [
-  templatefile("${path.module}/values/grafana.yaml", {
+  templatefile("${path.module}/values/grafana-service.yaml", {
     region              = var.region
     grafana_admin_secret = kubernetes_secret_v1.grafana_admin.metadata[0].name
   }),
   file("${path.module}/values/alertmanager.yaml"),
+  file("${path.module}/values/grafana-dashboards.yaml"),
   file("${path.module}/values/prometheus_rules.yaml")
 
   ]

@@ -64,41 +64,19 @@ variable "log_bucket_name" {
   type        = string
 }
 
-
-# Variables for EKS and Node Roles tags.
-variable "node_group_role_tags" {
-  description = "Tags to apply to the Node Group Role"
-  type        = map(string)
-  default     = {
-    Environment = "Dev"
-    Project     = "Startup"
-  }
-  
-}
-
-variable "eks_cluster_role_tags" {
-  description = "Tags to apply to the EKS Cluster Role"
-  type        = map(string)
-  default     = {
-    Environment = "Dev"
-    Project     = "Startup"
-  }
-  
-}
-
 variable "rbac_instance_profile_name" {
   description = "Name of the RBAC Instance Profile"
   type        = string
 }
 
-variable "prometheus_instance_profile_name" {
-  description = "Name of the Prometheus Instance Profile"
-  type        = string
-}
+# variable "prometheus_instance_profile_name" {
+#   description = "Name of the Prometheus Instance Profile"
+#   type        = string
+# }
 
-variable "grafana_instance_profile_name" {
-  description = "Name of the Grafana Instance Profile"
-  type        = string
-}
+# variable "grafana_instance_profile_name" {
+#   description = "Name of the Grafana Instance Profile"
+#   type        = string
+# }
 
 

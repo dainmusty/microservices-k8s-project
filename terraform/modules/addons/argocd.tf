@@ -26,7 +26,7 @@ resource "helm_release" "argocd" {
   namespace        = kubernetes_namespace_v1.argocd.metadata[0].name
   create_namespace = false
 
-  values = [file("${path.module}/values/argo-ingress-values.yaml")]
+  values = [file("${path.module}/values/argocd-service.yaml")]
 
   set {
     name  = "server.serviceAccount.create"
