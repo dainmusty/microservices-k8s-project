@@ -342,6 +342,11 @@ module "eks" {
   cluster_version  = "1.34"
   cluster_role = module.iam_core.cluster_role_arn
   subnet_ids = module.vpc.private_subnet_ids
+  eks_access_principal_arn = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"  # use data to hide account id later
+  eks_access_entry_policies = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  node_access_policies = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSWorkerNodePolicy"
+  
+  
   cluster_policy = [
     module.iam_core.cluster_policies
   ]
@@ -360,8 +365,8 @@ module "eks" {
       min_size     = 2
     }
   }
+  
 }
-
 }
 
 
@@ -471,37 +476,6 @@ module "app_ecr_repo" {
 
 
 
-module "aws_auth" {
-  source = "../../../modules/eks-auth-configmap"
-
-  cluster_name                = module.eks.cluster_name
-  enable_aws_auth_bootstrap   = false
-
-  bootstrap_role_arn = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role" # use data to hide account id later
-
-  cluster_details = {
-    endpoint                   = module.eks.cluster_endpoint
-    certificate_authority_data = module.eks.cluster_certificate_authority_data
-  }
-
-  map_roles = [
-    # REQUIRED: worker nodes
-    {
-      rolearn  = module.iam_core.node_group_role_arn
-      username = "system:node:{{EC2PrivateDNSName}}"
-      groups   = ["system:bootstrappers", "system:nodes"]
-    },
-
-    # REQUIRED: Terraform / CI access
-    {
-      rolearn  = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"  # use data to hide account id later
-      username = "terraform"
-      groups   = ["system:masters"]
-    },
-  ]
-
-  map_users = []
-}
 
 
 
