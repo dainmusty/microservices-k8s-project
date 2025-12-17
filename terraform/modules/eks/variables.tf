@@ -53,3 +53,19 @@ variable "eks_node_policies" {
   type = list(string)
 }
 
+
+# EKS Access Variables
+variable "eks_access_entry_policies" {
+  description = "EKS Access Entry Policies"
+  type        =  string
+}
+
+variable "eks_access_principal_arn" {
+  description = "eks access principal arn"
+  type = string
+}
+
+variable "node_access_policies" {
+  description = "node access policies"
+  type = string
+}

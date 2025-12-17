@@ -5,8 +5,10 @@ aws eks --region us-east-1 update-kubeconfig --name effulgencetech-dev
 2. Use the command below to grab your argocd password
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 
+
+hLt9uxTXEfBbYsG0
 3. Access argocd via Port Forwarding on your local machine. Option 1
-kubectl port-forward -n argocd svc/argocd-server 8080:443
+kubectl port-forward -n argocd svc/argocd-server 8080:80
 # Go to localhost:8080
 
 4. Access argocd via Ingress + ALB Option 2. (Recommended for production) 
@@ -15,10 +17,12 @@ kubectl -n argocd get ingress
 
 5. Access prometheus via Port Forwarding on your local machine. Option 1
 kubectl port-forward svc/kube-prometheus-stack-prometheus -n monitoring 9090:9090
+# Go to localhost:9090
+
 
 6. Access grafana via Port Forwarding on your local machine. Option 1
 kubectl port-forward svc/kube-prometheus-stack-grafana -n monitoring 3000:80
-
+# Go to localhost:3000   #gfnpasswd$123456789
 
 | Component      | Namespace   | ServiceAccount               | Can rename?           |
 | -------------- | ----------- | ---------------------------- | --------------------- |
