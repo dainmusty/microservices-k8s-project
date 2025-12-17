@@ -2,6 +2,10 @@ resource "aws_eks_access_entry" "terraform" {
   cluster_name  = var.cluster_name
   principal_arn = var.eks_access_principal_arn  #"arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"
   type          = "STANDARD"
+
+  depends_on = [
+    aws_eks_cluster.dev_cluster
+  ]
 }
 
 resource "aws_eks_access_policy_association" "terraform_admin" {
@@ -13,6 +17,10 @@ resource "aws_eks_access_policy_association" "terraform_admin" {
   access_scope {
     type = "cluster"
   }
+
+  depends_on = [
+    aws_eks_cluster.dev_cluster
+  ]
 }
 
 
@@ -20,6 +28,10 @@ resource "aws_eks_access_entry" "nodes" {
   cluster_name  = var.cluster_name
   principal_arn = var.node_group_role_arn
   type          = "EC2_LINUX"
+
+  depends_on = [
+    aws_eks_cluster.dev_cluster
+  ]
 }
 
 resource "aws_eks_access_policy_association" "nodes" {
@@ -31,4 +43,8 @@ resource "aws_eks_access_policy_association" "nodes" {
   access_scope {
     type = "cluster"
   }
+
+  depends_on = [
+    aws_eks_cluster.dev_cluster
+  ]
 }
