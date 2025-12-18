@@ -28,8 +28,9 @@ module "iam_core" {
   config_role_principals         = ["config.amazonaws.com"]
   s3_full_access_role_principals = ["ec2.amazonaws.com"]
 
+
   # Instance Profile Names
-  rbac_instance_profile_name        = "dev-rbac-instance-profile"
+  #rbac_instance_profile_name        = "dev-rbac-instance-profile"
   
   
   # S3 Buckets Referenced

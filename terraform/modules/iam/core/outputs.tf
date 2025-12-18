@@ -49,10 +49,10 @@ output "grafana_role_name" {
 #   value       = aws_iam_instance_profile.prometheus_instance_profile.name
 # }
 
-output "rbac_instance_profile_name" {
-  description = "Name of the rbac instance profile"
-  value       = aws_iam_instance_profile.rbac_instance_profile.name
-}
+# output "rbac_instance_profile_name" {
+#   description = "Name of the rbac instance profile"
+#   value       = aws_iam_instance_profile.rbac_instance_profile.name
+# }
 
 
 

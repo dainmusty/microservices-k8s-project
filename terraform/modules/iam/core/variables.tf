@@ -64,10 +64,10 @@ variable "log_bucket_name" {
   type        = string
 }
 
-variable "rbac_instance_profile_name" {
-  description = "Name of the RBAC Instance Profile"
-  type        = string
-}
+# variable "rbac_instance_profile_name" {
+#   description = "Name of the RBAC Instance Profile"
+#   type        = string
+# }
 
 # variable "prometheus_instance_profile_name" {
 #   description = "Name of the Prometheus Instance Profile"
