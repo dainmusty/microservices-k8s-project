@@ -467,6 +467,7 @@ resource "aws_iam_role_policy_attachment" "prometheus_policy_attachment" {
   policy_arn = aws_iam_policy.prometheus_policy.arn
 }
 
+# Will take care these later
 # # Instance profiles
 # resource "aws_iam_instance_profile" "grafana_instance_profile" {
 #   name = var.grafana_instance_profile_name
