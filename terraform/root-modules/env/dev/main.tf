@@ -130,7 +130,7 @@ module "bastion_sg" {
 
 # Private SG - Use this a private EKS SG 
 module "cluster_sg" {
-  source          = "../../../modules/security/private-sg"
+  source          = "../../../modules/security/private-sg"    # Remember to change name from private to cluster sg.
   vpc_id          = module.vpc.vpc_id
   env = "Dev"
 
@@ -368,8 +368,6 @@ module "eks" {
   
 }
 }
-
-
 
 
 #  module "rds" {
