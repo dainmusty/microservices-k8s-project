@@ -94,3 +94,9 @@ variable "cluster_certificate_authority_data" {
   description = "Cluster Certificate Authority"
   type = string
 }
+
+
+variable "terraform_role_arn" {
+  description = "ARN of the Terraform admin role"
+  type        = string
+}
