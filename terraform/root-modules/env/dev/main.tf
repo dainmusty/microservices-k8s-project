@@ -235,9 +235,10 @@ module "ec2" {
   ami_names                  = ["AL2023", "AL2", "Windows", "RedHat", "ubuntu"]
   instance_types             = ["t2.micro", "t2.micro", "t2.micro", "t2.micro", "t2.micro"]
   key_name                   = module.ssm.key_name_parameter_value
-  instance_profile_name      = module.iam_core.rbac_instance_profile_name
+  #instance_profile_name      = module.iam_core.rbac_instance_profile_name
   public_instance_count      = [0, 0, 0, 0, 0]
   private_instance_count     = [0, 0, 0, 0, 0]
+
 
   tag_value_public_instances = [
     [

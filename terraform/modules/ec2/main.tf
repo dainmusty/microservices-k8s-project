@@ -37,7 +37,7 @@ resource "aws_instance" "public" {
   key_name      = var.key_name
   subnet_id     = element(var.public_subnet_ids, index(var.ami_ids, each.value.ami) % length(var.public_subnet_ids))
   security_groups = [var.public_sg_id]
-  iam_instance_profile = var.instance_profile_name
+  #iam_instance_profile = var.instance_profile_name
   user_data = file("${path.module}/../../scripts/public_userdata.sh") # Update the user_data script as needed
   root_block_device {
     volume_size = var.volume_size
