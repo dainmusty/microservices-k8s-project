@@ -7,7 +7,9 @@ resource "aws_eks_cluster" "dev_cluster" {
   vpc_config {
     subnet_ids = var.subnet_ids
   }
-
+  access_config {
+    authentication_mode = "API_AND_CONFIG_MAP"
+  }
   depends_on = [
     var.cluster_policy
   ]
