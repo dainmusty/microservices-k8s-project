@@ -6,7 +6,7 @@ aws eks --region us-east-1 update-kubeconfig --name effulgencetech-dev
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 
 
-hLt9uxTXEfBbYsG0
+tvvtcyJnyMXZ6tbH
 3. Access argocd via Port Forwarding on your local machine. Option 1
 kubectl port-forward -n argocd svc/argocd-server 8080:80
 # Go to localhost:8080

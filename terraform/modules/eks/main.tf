@@ -9,6 +9,7 @@ resource "aws_eks_cluster" "dev_cluster" {
   }
   access_config {
     authentication_mode = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = true    # Give admin permissions to the cluster creator
   }
   depends_on = [
     var.cluster_policy
