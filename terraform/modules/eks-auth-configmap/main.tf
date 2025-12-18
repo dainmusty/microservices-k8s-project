@@ -64,3 +64,5 @@ resource "kubernetes_config_map_v1" "aws_auth" {
   # Ensure cluster exists before we attempt to apply
   depends_on = [var.cluster_name]
 }
+
+# will explore this option later.
