@@ -28,8 +28,9 @@ module "iam_core" {
   config_role_principals         = ["config.amazonaws.com"]
   s3_full_access_role_principals = ["ec2.amazonaws.com"]
 
+
   # Instance Profile Names
-  rbac_instance_profile_name        = "dev-rbac-instance-profile"
+  #rbac_instance_profile_name        = "dev-rbac-instance-profile"
   
   
   # S3 Buckets Referenced
@@ -234,9 +235,10 @@ module "ec2" {
   ami_names                  = ["AL2023", "AL2", "Windows", "RedHat", "ubuntu"]
   instance_types             = ["t2.micro", "t2.micro", "t2.micro", "t2.micro", "t2.micro"]
   key_name                   = module.ssm.key_name_parameter_value
-  instance_profile_name      = module.iam_core.rbac_instance_profile_name
+  #instance_profile_name      = module.iam_core.rbac_instance_profile_name
   public_instance_count      = [0, 0, 0, 0, 0]
   private_instance_count     = [0, 0, 0, 0, 0]
+
 
   tag_value_public_instances = [
     [

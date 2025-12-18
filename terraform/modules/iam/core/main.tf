@@ -202,11 +202,11 @@ resource "aws_iam_role_policy_attachment" "attach_admin_policy" {
   policy_arn = aws_iam_policy.admin_policy.arn
 }
 
-# RBAC Instance Profile
-resource "aws_iam_instance_profile" "rbac_instance_profile" {
-  name = var.rbac_instance_profile_name
-  role = aws_iam_role.admin_role.name
-}
+# # RBAC Instance Profile
+# resource "aws_iam_instance_profile" "rbac_instance_profile" {
+#   name = var.rbac_instance_profile_name
+#   role = aws_iam_role.admin_role.name
+# }
 
 
 # --- Config Role ---
@@ -381,7 +381,7 @@ resource "aws_iam_policy" "grafana_policy" {
 resource "aws_iam_role" "grafana_role" {
   name                 = "${var.company_name}-${var.env}-grafana-role"
   assume_role_policy   = data.aws_iam_policy_document.grafana_assume.json
-  permissions_boundary = aws_iam_policy.permission_boundary.arn
+  #permissions_boundary = aws_iam_policy.permission_boundary.arn
 
 }
 
@@ -434,7 +434,7 @@ data "aws_iam_policy_document" "prometheus_assume" {
 resource "aws_iam_role" "prometheus_role" {
   name                 = "${var.company_name}-${var.env}-prometheus-role"
   assume_role_policy   = data.aws_iam_policy_document.prometheus_assume.json
-  permissions_boundary = aws_iam_policy.permission_boundary.arn
+  #permissions_boundary = aws_iam_policy.permission_boundary.arn
 
 }
 
