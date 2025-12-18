@@ -34,17 +34,25 @@ resource "aws_eks_access_entry" "nodes" {
   ]
 }
 
-resource "aws_eks_access_policy_association" "nodes" {
-  cluster_name  = var.cluster_name
-  principal_arn = aws_eks_access_entry.nodes.principal_arn
+# resource "aws_eks_access_policy_association" "nodes" { 
+#   cluster_name  = var.cluster_name
+#   principal_arn = aws_eks_access_entry.nodes.principal_arn
 
-  policy_arn = var.node_access_policies  #"arn:aws:eks::aws:cluster-access-policy/AmazonEKSWorkerNodePolicy"
+#   policy_arn = var.node_access_policies  #"arn:aws:eks::aws:cluster-access-policy/AmazonEKSWorkerNodePolicy"
 
-  access_scope {
-    type = "cluster"
-  }
+#   access_scope {
+#     type = "cluster"
+#   }
 
-  depends_on = [
-    aws_eks_cluster.dev_cluster
-  ]
-}
+#   depends_on = [
+#     aws_eks_cluster.dev_cluster
+#   ]
+# }
+
+# Access Entry types behave differently
+# Access Entry Type	Purpose	Can attach policies?
+# STANDARD	Humans / CI / Terraform	✅ YES
+# EC2_LINUX	Worker nodes	❌ NO
+
+# 👉 Worker nodes DO NOT use access policies
+# 👉 They are authorized automatically by EKS
