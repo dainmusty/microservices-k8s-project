@@ -66,7 +66,7 @@ resource "aws_instance" "private" {
   key_name      = var.key_name
   subnet_id     = element(var.private_subnet_ids, index(var.ami_ids, each.value.ami) % length(var.private_subnet_ids))
   security_groups = [var.private_sg_id]
-  iam_instance_profile = var.instance_profile_name
+  #iam_instance_profile = var.instance_profile_name
   user_data = templatefile("${path.module}/../../scripts/private_userdata.sh", {})
 
   root_block_device {
