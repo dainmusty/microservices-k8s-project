@@ -100,3 +100,8 @@ variable "terraform_role_arn" {
   description = "ARN of the Terraform admin role"
   type        = string
 }
+
+variable "eks_access_entry" {
+  description = "eks access entry"
+  type = string
+}

@@ -450,7 +450,8 @@ module "addons" {
   ebs_csi_role_arn = module.iam_irsa.ebs_csi_role_arn
 
   # RBAC ClusterRoleBinding for Terraform
-  terraform_role_arn = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"  # use data to hide account id later
+  terraform_role_arn = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"
+  eks_access_entry   = module.eks.eks_access_entry  # use data to hide account id later
   
 }
 
