@@ -101,3 +101,131 @@ IAM Access Entry = who may authenticate
 Kubernetes RBAC = what they may see/do
 
 Both are required.
+
+so should i depends on eks access entry to the rbac block below so that the eks access entry is created before the Bootstrap Kubernetes RBAC (once)
+resource "kubernetes_cluster_role_binding_v1" "terraform_admin" {
+  metadata {
+    name = "terraform-admin"
+  }
+
+  subject {
+    kind      = "User"
+    name      = var.terraform_role_arn
+    api_group = "rbac.authorization.k8s.io"
+  }
+
+  role_ref {
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
+    api_group = "rbac.authorization.k8s.io"
+  }
+}
+
+Short answer: YES — but do it carefully 👍
+Long answer below so you don’t create a circular-dependency trap (very common with EKS).
+
+✅ Should RBAC depend on the EKS access entry?
+
+Yes, conceptually:
+
+EKS Access Entry must exist first, otherwise Kubernetes will not recognize the IAM principal and RBAC will fail with Unauthorized.
+
+So this ordering is correct:
+
+EKS Cluster
+→ EKS Access Entry
+→ Kubernetes RBAC (ClusterRoleBinding)
+→ Addons / Helm / Namespaces
+
+⚠️ The important caveat (this is where people get stuck)
+
+Terraform cannot automatically infer this ordering because:
+
+aws_eks_access_entry is AWS-side
+
+kubernetes_cluster_role_binding_v1 is Kubernetes-side
+
+They use different providers
+
+So you must explicitly wire the dependency.
+
+✅ Correct RBAC block (with dependency)
+resource "kubernetes_cluster_role_binding_v1" "terraform_admin" {
+  metadata {
+    name = "terraform-admin"
+  }
+
+  subject {
+    kind      = "User"
+    name      = var.terraform_role_arn
+    api_group = "rbac.authorization.k8s.io"
+  }
+
+  role_ref {
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
+    api_group = "rbac.authorization.k8s.io"
+  }
+
+  depends_on = [
+    aws_eks_access_entry.terraform
+  ]
+}
+
+
+✔️ This guarantees:
+
+IAM role is registered with EKS
+
+Kubernetes API recognizes the caller
+
+RBAC creation succeeds
+
+🧠 Why this works (important mental model)
+
+EKS Access Entry = “Who are you?”
+
+RBAC = “What are you allowed to do?”
+
+RBAC cannot succeed unless EKS already knows the principal.
+
+🚨 One more critical rule (DO NOT skip this)
+The Kubernetes provider must authenticate as the same role
+
+Your provider must use get-token with the Terraform role:
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.this.endpoint
+  cluster_ca_certificate = base64decode(
+    data.aws_eks_cluster.this.certificate_authority[0].data
+  )
+
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args = [
+      "eks", "get-token",
+      "--cluster-name", var.cluster_name,
+      "--role-arn", var.terraform_role_arn
+    ]
+  }
+}
+
+
+If:
+
+AWS provider uses the role
+
+Kubernetes provider does not
+
+➡️ You will still get Unauthorized
+
+🧨 Avoid this common mistake
+
+❌ Do NOT put this RBAC resource in the same module as cluster creation unless:
+
+Access entry is already created
+
+Provider is configured correctly
+
+Best practice (what you’re already drifting toward 👌)

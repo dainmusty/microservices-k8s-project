@@ -28,4 +28,7 @@ output "oidc_issuer" {
   value = aws_eks_cluster.dev_cluster.identity[0].oidc[0].issuer
 }
 
-
+output "eks_access_entry" {
+  description = "output for eks access entry"
+  value = aws_eks_access_entry.terraform.id
+}

@@ -5,7 +5,7 @@ provider "kubernetes" {
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
-    args        = ["eks", "get-token", "--cluster-name", var.cluster_name, "--region", var.region]
+    args        = ["eks", "get-token", "--cluster-name", var.cluster_name, "--region", var.region, "--role-arn", var.terraform_role_arn]
   }
 }
 
