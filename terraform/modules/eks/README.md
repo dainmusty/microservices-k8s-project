@@ -229,3 +229,23 @@ Access entry is already created
 Provider is configured correctly
 
 Best practice (what you’re already drifting toward 👌)
+
+
+#RBAC in K8s - We don't need if we are using eks access entries
+resource "kubernetes_cluster_role_binding_v1" "terraform_admin" {
+  metadata {
+    name = "terraform-admin"
+  }
+
+  subject {
+    kind      = "Group"
+    name      = "system:masters"
+    api_group = "rbac.authorization.k8s.io"
+  }
+
+  role_ref {
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
+    api_group = "rbac.authorization.k8s.io"
+  }
+}

@@ -69,3 +69,8 @@ variable "node_access_policies" {
   description = "node access policies"
   type = string
 }
+
+variable "console_user_access" {
+  description = "console user access to cluster"
+  type = string
+}
