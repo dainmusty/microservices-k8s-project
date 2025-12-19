@@ -451,8 +451,8 @@ module "addons" {
 
   # RBAC ClusterRoleBinding for Terraform
   terraform_role_arn = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"
-  eks_access_entry   = module.eks.eks_access_entry # use data to hide account id later
-
+  
+  
 }
 
 
