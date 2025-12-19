@@ -4,8 +4,8 @@ resource "kubernetes_cluster_role_binding_v1" "terraform_admin" {
   }
 
   subject {
-    kind      = "User"
-    name      = var.terraform_role_arn
+    kind      = "Group"
+    name      = "system:masters"
     api_group = "rbac.authorization.k8s.io"
   }
 
@@ -14,8 +14,4 @@ resource "kubernetes_cluster_role_binding_v1" "terraform_admin" {
     name      = "cluster-admin"
     api_group = "rbac.authorization.k8s.io"
   }
-
-  depends_on = [
-    var.eks_access_entry
-  ]
 }
