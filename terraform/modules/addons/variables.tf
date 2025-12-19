@@ -101,7 +101,7 @@ variable "terraform_role_arn" {
   type        = string
 }
 
-variable "eks_access_entry" {
-  description = "eks access entry"
-  type = string
-}
+# variable "eks_access_entry" {
+#   description = "eks access entry"
+#   type = string
+# }
