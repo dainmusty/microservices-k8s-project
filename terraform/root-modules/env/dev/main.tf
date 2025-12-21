@@ -461,6 +461,7 @@ module "addons" {
   # RBAC ClusterRoleBinding for Terraform
   terraform_role_arn = "arn:aws:iam::651706774390:role/microservices-project-dev-tf-role"
   
+  depends_on = [module.eks]
 
 }
 
