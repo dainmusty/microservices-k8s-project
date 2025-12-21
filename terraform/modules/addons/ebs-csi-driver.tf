@@ -31,3 +31,17 @@ resource "helm_release" "ebs_csi_driver" {
   ]
   depends_on = [kubernetes_service_account_v1.ebs_csi_controller]
 }
+
+
+
+
+# resource "kubernetes_storage_class" "ebs_sc" {
+#   metadata {
+#     name = "ebs-sc"
+#   }
+
+#   provisioner          = "ebs.csi.aws.com"
+#   reclaim_policy       = "Delete"
+#   volume_binding_mode  = "WaitForFirstConsumer"
+#   allow_volume_expansion = true
+# }

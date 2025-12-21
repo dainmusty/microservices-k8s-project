@@ -1,6 +1,6 @@
 # To access the argocd UI, you need to do the ff.
 1. Update the kubecofig
-aws eks --region us-east-1 update-kubeconfig --name effulgencetech-dev
+aws eks --region us-east-1 update-kubeconfig --name effulgencetech
 
 2. Use the command below to grab your argocd password
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d

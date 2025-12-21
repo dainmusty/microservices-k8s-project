@@ -360,3 +360,25 @@ grafana:
 
 
 After that, any dashboard JSON in a properly labeled ConfigMap will automatically appear in Grafana.
+
+
+Step 4 — Fix GitHub Actions (this is where it breaks)
+
+In your workflow, the order must be exact:
+
+- uses: aws-actions/configure-aws-credentials@v4
+  with:
+    role-to-assume: arn:aws:iam::651706774390:role/microservices-project-dev-tf-role
+    aws-region: us-east-1
+
+- name: Terraform Init
+  run: terraform init
+
+- name: Terraform Apply
+  run: terraform apply -auto-approve
+
+
+❌ If terraform init runs before AWS credentials exist → provider breaks permanently in that run.
+
+# lets try and do this
+make addons idempotent and CI-safe
