@@ -1,4 +1,4 @@
-# 1. Create Namespace
+# # 1. Create Namespace
 resource "kubernetes_namespace_v1" "argocd" {
   metadata {
     name = "argocd"

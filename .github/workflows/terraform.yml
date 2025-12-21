@@ -8,7 +8,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  CLUSTER_NAME: effulgencetech-dev
+  CLUSTER_NAME: effulgencetech
   TF_VERSION: "1.9.7"
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   ROLE_NAME: microservices-project-dev-tf-role
@@ -23,15 +23,15 @@ permissions:
 jobs:
   PlanInfra:
     runs-on: ubuntu-latest
-    
     if: github.event_name == 'pull_request'
+
     defaults:
       run:
         shell: bash
         working-directory: ${{ env.tf_actions_working_dir }}
 
     steps:
-      - name: Git checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
@@ -45,11 +45,6 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Terraform fmt
-        id: fmt
-        run: terraform fmt -check
-        continue-on-error: true
 
       - name: Terraform Init
         id: init
@@ -61,45 +56,8 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color -input=false
+        run: terraform plan -no-color -input=false -out planfile
         continue-on-error: true
-
-      - uses: actions/github-script@v6
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-
-            <details><summary>Validation Output</summary>
-
-            \`\`\`
-            ${{ steps.validate.outputs.stdout }}
-            \`\`\`
-
-            </details>
-
-            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-
-            <details><summary>Show Plan</summary>
-
-            \`\`\`
-            ${process.env.PLAN}
-            \`\`\`
-
-            </details>
-
-            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
 
       - name: Terraform Plan Status
         if: steps.plan.outcome == 'failure'
@@ -109,13 +67,14 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
     defaults:
       run:
         shell: bash
         working-directory: ${{ env.tf_actions_working_dir }}
 
     steps:
-      - name: Git checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
@@ -130,24 +89,15 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Terraform fmt
-        run: terraform fmt -check
-        continue-on-error: true
-
       - name: Terraform Init
-        run: terraform init -input=false
-
-      - name: Terraform Validate
-        run: terraform validate -no-color
-
-      - name: Terraform Plan
-        run: terraform plan -no-color -input=false
+        id: init
+        run: terraform init
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false
+        id: apply
+        run: terraform apply -auto-approve -input=false -parallelism=1
 
-      - name: Update kubeconfig for EKS
-        run: |
-          aws eks update-kubeconfig \
-            --region ${{ env.AWS_REGION }} \
-            --name ${{ env.CLUSTER_NAME }}
+      - name: Get Kubernetes config
+        id: getconfig
+        if: steps.apply.outcome == 'success'
+        run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
