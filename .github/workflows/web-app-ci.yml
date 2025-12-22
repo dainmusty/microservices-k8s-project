@@ -18,7 +18,6 @@ on:
           - "true"
           - "false"
 
-
 jobs:
   build-and-push:
     uses: ./.github/workflows/docker-build.yml
@@ -29,6 +28,7 @@ jobs:
       aws_role_name: microservices-project-dev-tf-role
       ecr_repo: tankofm-web
       image_name: nanajanashia/k8s-demo-app
+      dockerfile_path: ""   # leave empty to pull from Docker Hub; set path if building locally
 
   update-manifest:
     needs: build-and-push
