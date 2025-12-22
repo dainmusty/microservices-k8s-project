@@ -2,20 +2,22 @@ name: Web App CI
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "k8s/apps/web-app/**"
-
 
   workflow_dispatch:
     inputs:
       deploy:
         description: "Deploy the new image to the cluster?"
         required: true
-        default: "false"    # If later token-app does require auto deploy,you just flip: default to "true"
+        default: "false"
         type: choice
         options:
           - "true"
-          - "false"    
+          - "false"
+
 
 jobs:
   build-and-push:
@@ -24,8 +26,8 @@ jobs:
       aws_region: us-east-1
       aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
       aws_role_name: microservices-project-dev-tf-role
-      ecr_repo: web-app
-      image_name: web-app
+      ecr_repo: tankofm-web
+      image_name: nanajanashia/k8s-demo-app
 
   update-manifest:
     needs: build-and-push
