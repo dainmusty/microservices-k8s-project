@@ -27,8 +27,8 @@ jobs:
       aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
       aws_role_name: microservices-project-dev-tf-role
       ecr_repo: tankofm-web
-      image_name: nanajanashia/k8s-demo-app   # repo only
-      image_tag: v1.0                         # optional tag from Docker Hub
+      image_name: dainmusty/effulgencetech-nodejs-img   # repo only
+      image_tag: latest                         # optional tag from Docker Hub
       dockerfile_path: ""                     # empty → pull from Docker Hub; set path to build
 
   update-manifest:
@@ -39,6 +39,6 @@ jobs:
     with:
       app_path: "k8s/apps/web-app"
       manifest_file: "web-deployment.yml"
-      container_name: "nanajanashia/k8s-demo-app"
+      container_name: "dainmusty/effulgencetech-nodejs-img"
       new_tag: ${{ github.sha }}
       commit_message: "Updated web app image tag"
