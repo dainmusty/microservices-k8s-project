@@ -1,4 +1,4 @@
-name: Web App CI
+name: Payment App CI
 
 on:
   push:
