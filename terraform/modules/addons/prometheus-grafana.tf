@@ -9,7 +9,7 @@ resource "kubernetes_namespace_v1" "monitoring" {
 resource "kubernetes_service_account_v1" "grafana" {
   metadata {
     name      = "grafana"
-    namespace = "monitoring"
+    namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
     annotations = {
       "eks.amazonaws.com/role-arn" = var.grafana_irsa_arn
     }
@@ -51,12 +51,12 @@ resource "helm_release" "kube_prometheus_stack" {
   version    = var.prometheus_stack_version
 
   # 🔑 Stability fixes
-  timeout          = 900        # 15 minutes (mandatory for k-p-stack)
-  wait             = true
-  atomic           = true       # rollback on failure
-  cleanup_on_fail  = true       # avoid broken helm state
-  force_update     = false
-  recreate_pods    = false
+   wait             = true
+  timeout          = 900
+  cleanup_on_fail  = true
+  force_update     = true
+  recreate_pods    = true
+  skip_crds        = false
 
   values = [
     # Grafana service + admin secret
