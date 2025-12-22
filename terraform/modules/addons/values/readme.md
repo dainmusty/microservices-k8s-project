@@ -382,3 +382,22 @@ In your workflow, the order must be exact:
 
 # lets try and do this
 make addons idempotent and CI-safe
+
+# my origina kp-stack
+resource "helm_release" "kube_prometheus_stack" { 
+  name = "kube-prometheus-stack" 
+  namespace = kubernetes_namespace_v1.monitoring.metadata[0].name 
+  create_namespace = false 
+  repository = "https://prometheus-community.github.io/helm-charts" 
+  chart = "kube-prometheus-stack" 
+  version = var.prometheus_stack_version 
+  values = [ 
+    templatefile("${path.module}/values/grafana-service.yaml", 
+    { region = var.region 
+    grafana_admin_secret = kubernetes_secret_v1.grafana_admin.metadata[0].name }), 
+    file("${path.module}/values/alertmanager.yaml"), 
+    file("${path.module}/values/grafana-dashboards.yaml"), 
+    file("${path.module}/values/prometheus_rules.yaml") ] 
+    depends_on = [ kubernetes_service_account_v1.grafana,
+    kubernetes_secret_v1.grafana_admin, 
+    kubernetes_secret_v1.alertmanager_slack_webhook ] }
