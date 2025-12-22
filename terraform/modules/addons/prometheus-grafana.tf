@@ -50,15 +50,32 @@ resource "helm_release" "kube_prometheus_stack" {
   chart      = "kube-prometheus-stack"
   version    = var.prometheus_stack_version
 
-  values = [
-  templatefile("${path.module}/values/grafana-service.yaml", {
-    region              = var.region
-    grafana_admin_secret = kubernetes_secret_v1.grafana_admin.metadata[0].name
-  }),
-  file("${path.module}/values/alertmanager.yaml"),
-  file("${path.module}/values/grafana-dashboards.yaml"),
-  file("${path.module}/values/prometheus_rules.yaml")
+  # 🔑 Stability fixes
+  timeout          = 900        # 15 minutes (mandatory for k-p-stack)
+  wait             = true
+  atomic           = true       # rollback on failure
+  cleanup_on_fail  = true       # avoid broken helm state
+  force_update     = false
+  recreate_pods    = false
 
+  values = [
+    # Grafana service + admin secret
+    templatefile("${path.module}/values/grafana-service.yaml", {
+      region               = var.region
+      grafana_admin_secret = kubernetes_secret_v1.grafana_admin.metadata[0].name
+    }),
+
+    # Alertmanager config
+    file("${path.module}/values/alertmanager.yaml"),
+
+    # Dashboards
+    file("${path.module}/values/grafana-dashboards.yaml"),
+
+    # Prometheus rules + performance tuning (see note below)
+    file("${path.module}/values/prometheus_rules.yaml"),
+
+    # 🔽 CRITICAL: disable CRD management in Helm
+    file("${path.module}/values/kube-prometheus-crds.yaml")
   ]
 
   depends_on = [
@@ -67,6 +84,7 @@ resource "helm_release" "kube_prometheus_stack" {
     kubernetes_secret_v1.alertmanager_slack_webhook
   ]
 }
+
 
 data "aws_secretsmanager_secret_version" "slack_webhook" {
   secret_id = var.slack_webhook_secret_name
