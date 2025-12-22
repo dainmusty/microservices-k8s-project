@@ -6,7 +6,7 @@ aws eks --region us-east-1 update-kubeconfig --name effulgencetech
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 
 
-tvvtcyJnyMXZ6tbH
+37C7PqErNuRBSkSA
 3. Access argocd via Port Forwarding on your local machine. Option 1
 kubectl port-forward -n argocd svc/argocd-server 8080:80
 # Go to localhost:8080
@@ -566,3 +566,275 @@ provider "helm" {
   }
 
 }
+
+
+the client to provide credentials"
+
+Good news first: your cluster and addons are now correct.
+What you’re seeing now is not a Terraform / Helm problem anymore — it’s pure kubectl authentication context drift.
+
+Let’s straighten this out cleanly.
+
+Short answer (important)
+
+❌ No, you do NOT need the Terraform role to assume your IAM user
+✅ You must use kubectl as a principal that already has EKS access
+
+Right now:
+
+Terraform (via microservices-project-dev-tf-role) ✅ works
+
+AWS Console (when you Switch Role) ✅ works
+
+kubectl (as IAM user musty) ❌ is using stale or invalid credentials
+
+That’s why Helm succeeds but kubectl port-forward fails.
+
+Why this is happening
+
+Your access entries are correct:
+
+Principal	Purpose	OK
+AWSServiceRoleForAmazonEKS	Control plane	✅
+dev-node-role	Worker nodes	✅
+microservices-project-dev-tf-role	Terraform / CI	✅
+
+But your IAM user (arn:aws:iam::…:user/musty) is NOT the principal kubectl is authenticated as — even if you can see resources in the console after switching roles.
+
+kubectl does not inherit console role switching.
+
+The root cause of this error
+the server has asked for the client to provide credentials
+
+
+This means kubectl is calling EKS with credentials that are either:
+
+expired
+
+wrong IAM principal
+
+missing EKS access
+
+The correct mental model (this is key)
+Tool	Identity used
+Terraform	OIDC → microservices-project-dev-tf-role
+AWS Console	Whatever role you switched to
+kubectl	Whatever AWS credentials are active in your shell
+
+They are independent.
+
+✅ Correct solution (recommended & clean)
+Option A — Use kubectl as the Terraform role (BEST PRACTICE)
+
+This matches how CI works and avoids IAM-user drift.
+
+1️⃣ Assume the Terraform role locally
+aws sts assume-role \
+  --role-arn arn:aws:iam::651706774390:role/microservices-project-dev-tf-role \
+  --role-session-name kubectl-session
+
+
+Export the credentials returned:
+
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_SESSION_TOKEN=...
+
+2️⃣ Regenerate kubeconfig using that role
+aws eks update-kubeconfig \
+  --region us-east-1 \
+  --name effulgencetech-dev \
+  --role-arn arn:aws:iam::651706774390:role/microservices-project-dev-tf-role
+
+3️⃣ Verify identity
+aws sts get-caller-identity
+
+
+You must see:
+
+arn:aws:iam::651706774390:assumed-role/microservices-project-dev-tf-role/...
+
+4️⃣ Test kubectl
+kubectl auth can-i get pods -n argocd
+kubectl get nodes
+kubectl port-forward -n argocd svc/argocd-server 8080:80
+
+
+✅ This will now work.
+
+❌ What you should NOT do
+
+❌ Do NOT make Terraform role assume your IAM user
+
+❌ Do NOT add more EKS access entries
+
+❌ Do NOT loosen RBAC
+
+❌ Do NOT re-create the cluster
+
+Your access model is already correct.
+
+If you really want IAM user access too (optional)
+
+Only do this if you insist on using your IAM user directly with kubectl.
+
+Add one access entry:
+
+resource "aws_eks_access_entry" "iam_user" {
+  cluster_name  = var.cluster_name
+  principal_arn = "arn:aws:iam::651706774390:user/musty"
+  type          = "STANDARD"
+}
+
+
+Then regenerate kubeconfig without role-arn:
+
+aws eks update-kubeconfig --name effulgencetech-dev --region us-east-1
+
+
+But again — this is not recommended for production.
+
+Why Helm worked but kubectl failed
+
+Helm ran inside Terraform → assumed role → valid token
+
+kubectl ran in your shell → wrong credentials → rejected
+
+This is a very common EKS gotcha, not a design issue.
+
+Final verdict
+
+✅ Your cluster is healthy
+✅ Your addons are healthy
+✅ Your IAM model is correct
+❌ Your local kubectl context just needs alignment
+
+Once you align kubectl with the Terraform role, the errors disappear permanently.
+
+If you want next:
+
+permanent AWS profile setup
+
+kubectl context per-role
+
+GitHub Actions parity with local
+
+zero-trust RBAC tightening
+
+I’ve got you.
+
+i have disguised the userId details ok 
+aws sts get-caller-identity
+{
+    "UserId": "***************5:kubectl-session", 
+    "Account": "651706774390",
+    "Arn": "arn:aws:sts::651706774390:assumed-role/microservices-project-dev-tf-role/kubectl-session"
+}
+Mustydain:microservices-k8s-project$ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+An error occurred (AccessDenied) when calling the AssumeRole operation: User: arn:aws:sts::651706774390:assumed-role/microservices-project-dev-tf-role/kubectl-session is not authorized to perform: sts:AssumeRole on resource: arn:aws:iam::651706774390:role/microservices-project-dev-tf-role
+E1222 00:52:58.625162   38896 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://363B73A6A82B1F370F1095C7D96D9CBD.gr7.us-east-1.eks.amazonaws.com/api?timeout=32s\": getting credentials: exec: executable aws failed with exit code 254"
+
+Perfect — thanks for pasting the output. This is actually the final missing piece, and it’s a classic EKS + kubectl + role-assumption trap. You’re one small fix away.
+
+What’s happening (very important)
+
+Your identity is correct:
+
+arn:aws:sts::651706774390:assumed-role/microservices-project-dev-tf-role/kubectl-session
+
+
+✅ You already assumed the Terraform role
+❌ But kubectl is trying to assume the SAME role again
+
+That’s why you see:
+
+AccessDenied: is not authorized to perform: sts:AssumeRole
+
+
+This is called double role assumption, and AWS explicitly forbids it unless you design for role chaining (which you should NOT do here).
+
+Root cause (exact)
+
+Your kubeconfig (or Terraform kubernetes/helm provider) still contains:
+
+--role-arn arn:aws:iam::651706774390:role/microservices-project-dev-tf-role
+
+
+So the flow becomes:
+
+IAM user → assume Terraform role → kubectl → tries to assume Terraform role AGAIN ❌
+
+✅ The correct rule (memorize this)
+
+If your shell is already assumed into a role, kubectl MUST NOT specify --role-arn
+
+Fix (do this exactly)
+1️⃣ Regenerate kubeconfig WITHOUT --role-arn
+aws eks update-kubeconfig \
+  --region us-east-1 \
+  --name effulgencetech-dev
+
+
+⚠️ This is the key step.
+
+2️⃣ Confirm kubeconfig is clean
+kubectl config view --minify
+
+
+You should see NO --role-arn in the exec.args.
+
+3️⃣ Test again (this will now work)
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d
+
+kubectl port-forward -n argocd svc/argocd-server 8080:80
+
+Why Terraform & Helm worked earlier
+
+Terraform → AWS provider → role assumed once ✅
+
+Helm (inside Terraform) → same credentials ✅
+
+kubectl → tried to assume role again ❌
+
+Now that kubectl inherits the already-assumed role, everything aligns.
+
+Should you change IAM policies?
+
+❌ NO
+
+Your Terraform role policy is already correct.
+The error was not missing permissions, it was invalid auth flow.
+
+Golden setup (final state)
+Component	Identity
+GitHub Actions	OIDC → Terraform role
+Terraform	Terraform role
+Helm provider	Terraform role
+kubectl (local)	Terraform role
+Console access	Switch role → Terraform role
+
+This is exactly how production EKS clusters are operated.
+
+Quick mental checklist (for the future)
+
+❓ Already assumed a role? → Do NOT pass --role-arn
+
+❓ Using IAM user directly? → --role-arn is OK
+
+❓ CI/CD? → OIDC → no role chaining
+
+You did everything right. This last error was just AWS being very strict (and very unclear).
+
+If you want next:
+
+clean multi-profile setup
+
+zero-drift kubeconfig
+
+GitHub Actions parity with local
+
+locking down cluster-admin safely
+
+Say the word.

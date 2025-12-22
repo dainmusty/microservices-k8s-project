@@ -8,7 +8,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  CLUSTER_NAME: dev_eks_cluster
+  CLUSTER_NAME: effulgencetech
   AWS_ACCOUNT_ID:  ${{ secrets.AWS_ACCOUNT_ID }}
   ROLE_NAME: microservices-project-dev-tf-role
   BOOTSTRAP_DIR: k8s/bootstrap
