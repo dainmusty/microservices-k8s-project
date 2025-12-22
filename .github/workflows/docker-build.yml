@@ -16,8 +16,11 @@ on:
         required: true
         type: string
       image_name:
+        required: true
+        type: string
+      dockerfile_path:
         required: false
-        default: app
+        default: ""   # If empty, pull from Docker Hub
         type: string
 
     secrets:
@@ -35,9 +38,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build container
+      - name: Build or Pull Docker Image
         run: |
-          docker build -t ${{ inputs.image_name }}:${{ github.sha }} .
+          if [ -f "${{ inputs.dockerfile_path }}" ] && [ "${{ inputs.dockerfile_path }}" != "" ]; then
+            echo "Dockerfile found at ${{ inputs.dockerfile_path }}, building image..."
+            docker build -f "${{ inputs.dockerfile_path }}" -t ${{ inputs.image_name }}:${{ github.sha }} .
+          else
+            echo "No Dockerfile provided, pulling image from Docker Hub..."
+            docker pull ${{ inputs.image_name }}
+            docker tag ${{ inputs.image_name }} ${{ inputs.image_name }}:${{ github.sha }}
+          fi
 
       - name: Security scan with Trivy
         uses: aquasecurity/trivy-action@master
