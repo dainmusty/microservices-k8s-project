@@ -22,6 +22,7 @@ on:
 jobs:
   build-and-push:
     uses: ./.github/workflows/docker-build.yml
+    secrets: inherit
     with:
       aws_region: us-east-1
       aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -33,6 +34,7 @@ jobs:
     needs: build-and-push
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true'
     uses: ./.github/workflows/update-manifest.yml
+    secrets: inherit
     with:
       app_path: "k8s/apps/web-app"
       manifest_file: "web-deployment.yml"
