@@ -31,6 +31,15 @@ on:
       aws_oidc_role:
         required: false
 
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  packages: write        
+
+
+
 jobs:
   build:
     runs-on: ubuntu-latest
