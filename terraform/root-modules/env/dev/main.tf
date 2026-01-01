@@ -233,7 +233,7 @@ module "ec2" {
   ResourcePrefix = "Dev"
   ami_ids        = ["ami-08b5b3a93ed654d19", "ami-02a53b0d62d37a757", "ami-02e3d076cbd5c28fa", "ami-0c7af5fe939f2677f", "ami-04b4f1a9cf54c11d0"]
   ami_names      = ["AL2023", "AL2", "Windows", "RedHat", "ubuntu"]
-  instance_types = ["t2.micro", "t2.micro", "t2.micro", "t2.micro", "t2.micro"]
+  instance_types = ["t2.micro", "t2.micro", "t2.micro", "t2.micro", "t3.micro"]
   key_name       = module.ssm.key_name_parameter_value
   #instance_profile_name      = module.iam_core.rbac_instance_profile_name
   public_instance_count  = [0, 0, 0, 0, 0]
@@ -471,9 +471,9 @@ module "app_ecr_repo" {
   source = "../../../modules/ecr"
 
   for_each = {
-    web = "tankofm-web"
-    app = "tankofm-app"
-    db  = "tankofm-db"
+    web = "web-app"
+    app = "token-app"
+    db  = "payment-app"
   }
 
   repository_name = each.value

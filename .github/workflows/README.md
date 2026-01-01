@@ -1,3 +1,4 @@
+# Workflows Structure
 .github/
   workflows/
     infra-deploy.yml
@@ -7,37 +8,6 @@
         terraform.yml
         docker-build.yml
         update-manifest.yml
-
-terraform/
-  vpc/
-  eks/
-  argocd/
-  alb/
-  monitoring/
-
-k8s/
-  bootstrap/
-    root-application.yaml
-  apps/
-    dev/
-      api/
-        deployment.yaml
-        service.yaml
-      web/
-      payment/
-
-OPTIONAL NEXT IMPROVEMENTS bootstrap argocd
-
-We can add:
-
-🔹 Automatic cluster drift detection
-
-ArgoCD CLI + notification when apps are OutOfSync
-
-🔹 Slack / MS Teams notification on rollout
-🔹 Auto-create ArgoCD Projects per environment
-🔹 Add SOPS / Sealed Secrets auto-sync
-
 
 FINAL BEST PRACTICE WORKFLOW MODEL
 
@@ -112,14 +82,6 @@ Yes — the moment you run terraform apply, and the cluster + ArgoCD installs:
 (Manually, or automatically if bootstrap files changed)
 
 ✔ Then app CI pipelines run whenever code or Dockerfiles change
-🟢 Final Recommendation
-
-👉 KEEP your new ArgoCD bootstrap workflow
-👉 REMOVE all Argo logic from Terraform workflow
-👉 Do not push commits from CI to trigger Argo sync
-👉 Let ArgoCD manage deployments
-👉 Let CI only update manifests + update images in ECR
-
 ✅ High-Level Principle
 
 Manifests should NEVER contain images until CI/CD has built, scanned, and pushed the final image to ECR.
@@ -220,7 +182,7 @@ CI/CD provides these guarantees.
 │               └── templates/
 ├── .README.md
 
-hat does this mean?
+what does this mean?
 paths:
       - "docker/api/**"
       - ".github/workflows/api-ci.yml"

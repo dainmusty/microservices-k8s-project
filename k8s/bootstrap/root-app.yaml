@@ -1,25 +1,25 @@
-# k8s/bootstrap/apps/apps-dev.yaml
-
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: apps-dev
+  name: apps-of-apps
   namespace: argocd
 spec:
   project: default
+
   source:
-    repoURL: https://github.com/dainmusty/gnpc-terraform-infra-k8s-web-app
+    repoURL: https://github.com/dainmusty/minikube-project.git
     targetRevision: main
-    path: k8s/apps/dev
+    path: apps/dev
     directory:
-      recurse: true
+      recurse: true   # 👈 This allows argo to look into subdirectories
+
   destination:
     server: https://kubernetes.default.svc
-    namespace: fonapp
+    namespace: argocd
+
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-  # Optional ordering (ensure shared resources come first)
-  dependsOn:
-    - shared-app
+    syncOptions:
+      - CreateNamespace=true

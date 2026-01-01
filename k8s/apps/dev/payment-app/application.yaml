@@ -1,20 +1,24 @@
-# k8s/bootstrap/apps/shared-app.yaml
-
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: shared-app
+  name: payment-app
   namespace: argocd
 spec:
   project: default
+
   source:
-    repoURL: https://github.com/dainmusty/gnpc-terraform-infra-k8s-web-app
+    repoURL: https://github.com/dainmusty/minikube-project.git
     targetRevision: main
-    path: k8s/shared
+    path: apps/dev/payment-app
+
   destination:
     server: https://kubernetes.default.svc
-    namespace: fonapp
+    namespace: payment-app
+
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

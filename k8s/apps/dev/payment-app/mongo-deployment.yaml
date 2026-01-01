@@ -1,27 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mongodb-deployment
-  namespace: fonapp
-  labels:
-    app: mongo
-    environment: dev
-    managed-by: argocd
+  name: payment-mongo
+  namespace: payment-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mongo
+      app: payment-mongo
   template:
     metadata:
       labels:
-        app: mongo
-        environment: dev
-        managed-by: argocd
+        app: payment-mongo
     spec:
       containers:
       - name: mongo
-        image: mongo:8.0.16-nanoserver-ltsc2022
+        image: mongo:5.0
         ports:
         - containerPort: 27017
         env:
@@ -29,14 +23,9 @@ spec:
           valueFrom:
             secretKeyRef:
               name: mongo-secret
-              key: mongo-usr
+              key: mongo-user
         - name: MONGO_INITDB_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
               name: mongo-secret
-              key: mongo-pwd
-        readinessProbe:
-          exec:
-            command: ["mongo", "--eval", "db.adminCommand('ping')"]
-          initialDelaySeconds: 5
-          periodSeconds: 10
+              key: mongo-password
