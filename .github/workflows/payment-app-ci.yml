@@ -38,7 +38,7 @@ jobs:
     secrets: inherit
     with:
       app_path: "k8s/apps/dev/payment-app"
-      manifest_file: "deployment.yaml"
+      manifest_file: "web-deployment.yaml"
       container_name: "nanajanashia/k8s-demo-app:v1.0"
       new_tag: ${{ github.sha }}
       commit_message: "Updated payment app image tag"
