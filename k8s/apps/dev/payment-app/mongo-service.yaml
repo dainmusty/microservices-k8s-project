@@ -4,9 +4,9 @@ metadata:
   name: payment-mongo
   namespace: payment-app
 spec:
+  clusterIP: None
   selector:
     app: payment-mongo
   ports:
     - port: 27017
       targetPort: 27017
-  type: ClusterIP

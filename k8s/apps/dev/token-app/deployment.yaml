@@ -18,8 +18,3 @@ spec:
           image: dainmusty/effulgencetech-nodejs-img:tag
           ports:
             - containerPort: 8080
-          envFrom:
-            - configMapRef:
-                name: token-app-config
-            - secretRef:
-                name: token-app-secrets

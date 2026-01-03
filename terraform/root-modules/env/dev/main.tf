@@ -21,7 +21,7 @@ module "iam_core" {
   source = "../../../modules/iam/core"
 
   # Resource Tags
-  env          = "dev"
+  env          = local.env
   company_name = "company-name"
 
   # Role Services Allowed
@@ -69,7 +69,7 @@ module "vpc" {
 
 
   vpc_cidr             = "10.1.0.0/16"
-  ResourcePrefix       = "dev"
+  ResourcePrefix       = local.env
   enable_dns_hostnames = true
   enable_dns_support   = true
   instance_tenancy     = "default"
@@ -91,7 +91,7 @@ module "vpc" {
   flow_logs_destination      = module.s3.log_bucket_arn
   flow_logs_traffic_type     = "ALL" # ACCEPT → capture only accepted traffic. # REJECT → capture only rejected traffic. ALL → capture all traffic.
   vpc_flow_log_iam_role_arn  = null  # Provide iam role if using CloudWatch Logs
-  env                        = "dev"
+  env                        = local.env
   enable_nat_gateway         = true
 
 
@@ -103,7 +103,7 @@ module "vpc" {
 module "bastion_sg" {
   source = "../../../modules/security/bastion"
   vpc_id = module.vpc.vpc_id
-  env    = "dev"
+  env    = local.env
 
   bastion_ingress_rules = [
     {
@@ -127,7 +127,7 @@ module "bastion_sg" {
 
   bastion_sg_tags = {
     Name        = "bastion-sg"
-    Environment = "dev"
+    Environment = local.env
   }
 
 }
@@ -137,7 +137,7 @@ module "bastion_sg" {
 module "cluster_sg" {
   source = "../../../modules/security/private-sg" # Remember to change name from private to cluster sg.
   vpc_id = module.vpc.vpc_id
-  env    = "dev"
+  env    = local.env
 
   ingress_rules = [
     {
@@ -168,7 +168,7 @@ module "cluster_sg" {
 
   cluster_sg_tags = {
     Name        = "cluster-sg"
-    Environment = "dev"
+    Environment = local.env
   }
 
 }
@@ -178,7 +178,7 @@ module "cluster_sg" {
 module "node_sg" {
   source = "../../../modules/security/public-sg"
   vpc_id = module.vpc.vpc_id
-  env    = "dev"
+  env    = local.env
 
   ingress_rules = [
 
@@ -223,7 +223,7 @@ module "node_sg" {
 
   node_sg_tags = {
     Name        = "node-sg"
-    Environment = "dev"
+    Environment = local.env
   }
 
 }
@@ -234,7 +234,7 @@ module "node_sg" {
 module "ec2" {
   source = "../../../modules/ec2"
 
-  ResourcePrefix = "dev"
+  ResourcePrefix = local.env
   ami_ids        = ["ami-08b5b3a93ed654d19", "ami-02a53b0d62d37a757", "ami-02e3d076cbd5c28fa", "ami-0c7af5fe939f2677f", "ami-04b4f1a9cf54c11d0"]
   ami_names      = ["AL2023", "AL2", "Windows", "RedHat", "ubuntu"]
   instance_types = ["t2.micro", "t2.micro", "t2.micro", "t2.micro", "t3.micro"]
@@ -248,7 +248,7 @@ module "ec2" {
     [
       {
         Name        = "bastion"
-        Environment = "dev"
+        Environment = local.env
       },
 
     ],
@@ -297,7 +297,7 @@ module "s3" {
   ResourcePrefix = "Dev-Enterprise"
 
   tags = {
-    Environment = "dev"
+    Environment = local.env
     Project     = "microservices-k8s"
   }
 }
@@ -487,7 +487,7 @@ module "app_ecr_repo" {
   scan_on_push         = true
 
   tags = {
-    Environment = "dev"
+    Environment = local.env
     Project     = "Push-To-ECR"
   }
 }

@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: token-app-config
-  namespace: token-app
-data:
-  APP_ENV: dev
-  LOG_LEVEL: debug
