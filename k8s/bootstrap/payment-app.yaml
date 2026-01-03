@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: web-app
+  name: payment-app
   namespace: argocd
 spec:
   project: default
@@ -9,11 +9,11 @@ spec:
   source:
     repoURL: https://github.com/dainmusty/minikube-project.git
     targetRevision: main
-    path: apps/dev/web-app
+    path: k8s/apps/dev/payment-app
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: web-app
+    namespace: payment-app
 
   syncPolicy:
     automated:
@@ -21,3 +21,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+

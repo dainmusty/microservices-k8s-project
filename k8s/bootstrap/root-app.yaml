@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: apps-of-apps
+  name: app-of-apps
   namespace: argocd
 spec:
   project: default
@@ -9,7 +9,7 @@ spec:
   source:
     repoURL: https://github.com/dainmusty/minikube-project.git
     targetRevision: main
-    path: apps/dev
+    path: k8s/bootstrap        # ✅ ONLY Applications live here
     directory:
       recurse: true   # 👈 This allows argo to look into subdirectories
 

@@ -1,4 +1,11 @@
 # minikube-project
+The Correct App-of-Apps Model (Golden Rule)
+
+Root App → creates ONLY Applications
+
+Child Apps → create workloads
+
+
 microservices project
 You’re very close — nothing is “broken”.
 This is a classic App-of-Apps gotcha, and the Argo CD UI is actually telling us the truth.
