@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: token-app
+  namespace: token-app
+spec:
+  selector:
+    app: token-app
+  ports:
+    - port: 80          # ingress talks to this
+      targetPort: 8080  # forward to container port
+  type: ClusterIP

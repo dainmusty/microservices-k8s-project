@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: token-app
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/dainmusty/minikube-project.git
+    targetRevision: main
+    path: k8s/apps/dev/token-app
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: token-app
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

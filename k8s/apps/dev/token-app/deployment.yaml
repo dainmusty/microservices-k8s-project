@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: token-app
+  namespace: token-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: token-app
+  template:
+    metadata:
+      labels:
+        app: token-app
+    spec:
+      containers:
+        - name: token-app
+          image: dainmusty/effulgencetech-nodejs-img:tag
+          ports:
+            - containerPort: 8080
